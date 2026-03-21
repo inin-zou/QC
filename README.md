@@ -4,6 +4,8 @@
 
 Build a dataset augmentation tool for a [LeRobot v3](https://github.com/huggingface/lerobot) dataset. 
 
+**We expect you to use AI coding agents heavilly when building these tools**
+
 
 Your tool should **automatically upload the augmented dataset to Hugging Face Hub** as part of its run, and print a direct visualizer link, e.g.:
   ```
@@ -18,7 +20,7 @@ You have **up to 6 hours**. Spend the time however you see fit — you can go de
 When the 6 hours are up, email us the link to your **public GitHub repo** containing:
 
 - Working code (script, CLI, notebook, or library — your choice)
-- A short README explaining what it does and how to run it
+- A short README explaining what it does, how to run it, and how you utilized AI coding agents to build it
 
 ## Hints
 

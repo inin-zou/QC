@@ -15,7 +15,7 @@ You have **up to 6 hours**. Spend the time however you see fit — you can go de
 
 ## What to deliver
 
-Before the 6 hours are up, email us the link to your **public GitHub repo** containing at least:
+When the 6 hours are up, email us the link to your **public GitHub repo** containing:
 
 - Working code (script, CLI, notebook, or library — your choice)
 - A short README explaining what it does and how to run it
@@ -24,5 +24,5 @@ Before the 6 hours are up, email us the link to your **public GitHub repo** cont
 
 - A LeRobot v3 dataset is a Hugging Face dataset with episodes stored as `.parquet` files plus a `meta/` folder containing `info.json`, `tasks.json`, and optionally `stats.json`. Videos live under `videos/`.
 - You can inspect any public dataset with the visualizer: https://huggingface.co/spaces/lerobot/visualize_dataset
-- A good starting dataset to work with: [`lerobot/aloha_static_cups_open`](https://huggingface.co/spaces/lerobot/visualize_dataset?path=%2Flerobot%2Faloha_static_cups_open%2Fepisode_0%3Ft%3D2) or any dataset on the [LeRobot hub](https://huggingface.co/lerobot).
+- A good starting dataset to work with: [`lerobot/aloha_static_cups_open`](https://huggingface.co/datasets/lerobot/aloha_static_cups_open) or any dataset on the [LeRobot hub](https://huggingface.co/lerobot).
 - It could for example be tools to improve, filter, multiply, increase variation, change background etc etc of a dataset, the sky is the limit.

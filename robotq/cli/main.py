@@ -377,6 +377,7 @@ def adapters() -> None:
     table.add_column("DOF")
 
     table.add_row("aloha", "ALOHA", "L/R arm swap", "14")
+    table.add_row("generic", "Any single-arm", "Video flip only", "any")
 
     console.print(table)
 

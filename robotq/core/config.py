@@ -136,4 +136,9 @@ def resolve_adapter(name: str) -> Any:
 
         return AlohaAdapter()
 
-    raise ValueError(f"Unknown adapter name: {name!r}. Supported adapters: ['aloha']")
+    if name == "generic":
+        from robotq.adapters.generic import GenericSingleArmAdapter
+
+        return GenericSingleArmAdapter()
+
+    raise ValueError(f"Unknown adapter name: {name!r}. Supported adapters: ['aloha', 'generic']")

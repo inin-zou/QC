@@ -78,6 +78,16 @@ def load_dataset(
     # hf_dataset has all tabular data
     hf_ds = dataset.hf_dataset
 
+    # Warn about memory usage for large loads
+    if num_episodes > 10 and len(camera_names) >= 4:
+        logger.warning(
+            "Loading %d episodes with %d cameras — estimated ~%.1fGB RAM. "
+            "Use max_episodes to limit if needed.",
+            num_episodes,
+            len(camera_names),
+            num_episodes * len(camera_names) * 400 * 480 * 640 * 3 / 1e9,
+        )
+
     episodes: list[Episode] = []
 
     for ep_idx in range(num_episodes):

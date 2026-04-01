@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "robotq": {
+      "command": "uv",
+      "args": ["run", "--directory", "${CLAUDE_PLUGIN_ROOT}/../..", "python", "-m", "robotq.mcp.server"],
+      "env": {}
+    }
+  }
+}

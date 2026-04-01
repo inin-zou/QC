@@ -45,10 +45,23 @@ def augment(
     """Augment a LeRobot v3 dataset with composable transforms."""
     from robotq.core.pipeline import Compose
 
-    # -- 1. Print loading message ------------------------------------------------
-    console.print(f"[bold blue]Loading dataset:[/] {dataset}")
+    # -- 1. Read config first (may override dataset/output/adapter/multiply) -----
+    pipeline: Compose | None = None
+
+    if config is not None:
+        from robotq.core.config import load_config, build_pipeline, resolve_adapter
+
+        cfg = load_config(config)
+        dataset = cfg.get("dataset", dataset)
+        output = cfg.get("output", output)
+        adapter = cfg.get("adapter", adapter)
+        multiply = cfg.get("multiply", multiply)
+        resolved_adapter = resolve_adapter(adapter)
+        pipeline = build_pipeline(cfg, adapter=resolved_adapter)
+        console.print(f"[bold blue]Pipeline loaded from config:[/] {config}")
 
     # -- 2. Load dataset ---------------------------------------------------------
+    console.print(f"[bold blue]Loading dataset:[/] {dataset}")
     from robotq.io.loader import load_dataset as _load_dataset
 
     episodes = _load_dataset(dataset, max_episodes=max_episodes)
@@ -57,21 +70,7 @@ def augment(
         f"[green]{episodes[0].num_frames}[/] frames in first episode"
     )
 
-    # -- 3. Build pipeline -------------------------------------------------------
-    pipeline: Compose | None = None
-
-    if config is not None:
-        # Try config-based pipeline first
-        try:
-            from robotq.core.config import build_pipeline  # type: ignore[import-not-found]
-
-            pipeline = build_pipeline(config)
-            console.print(f"[bold blue]Pipeline loaded from config:[/] {config}")
-        except ImportError:
-            console.print(
-                "[yellow]Warning:[/] robotq.core.config not available, falling back to flags."
-            )
-
+    # -- 3. Build pipeline from flags (if no config) ----------------------------
     if pipeline is None:
         # Build pipeline from CLI flags
         resolved_adapter = _resolve_adapter(adapter)

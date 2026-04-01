@@ -156,7 +156,7 @@ def write_dataset(
             import os
 
             os.environ["HF_TOKEN"] = token
-        dataset.meta.push_to_hub()
+        dataset.push_to_hub()
 
     return generate_visualizer_link(repo_id)
 

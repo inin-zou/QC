@@ -324,6 +324,10 @@ robotq augment --dataset lerobot/aloha_static_cups_open --output test/smoke \
 ## Known Limitations
 
 - **BackgroundReplace mask quality** — The `fast` method uses frame differencing, which produces rough masks. Works for proving the pipeline, but SAM2 segmentation would produce much cleaner robot/background separation.
+- **Single robot adapter** — Only ALOHA (bimanual, 14-DOF) is implemented. The adapter pattern is extensible but unproven with other robot types (single-arm, mobile manipulators).
+- **Memory usage** — All episode frames are held in RAM. Loading 5 episodes × 4 cameras × 400 frames ≈ 7GB. Large datasets (50+ episodes) may OOM — consider using `--max-episodes` to limit.
+- **No resume on failure** — If Hub upload fails partway, there's no checkpointing. The full augmentation + write must be re-run.
+- **BackgroundReplace processes one camera** — Inpainting runs on the primary camera by default. Processing all 4 cameras is supported but 4x slower (~10s per keyframe × 4 cameras).
 
 ## Roadmap
 

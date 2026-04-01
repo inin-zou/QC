@@ -34,6 +34,7 @@ def augment(
     color_jitter: bool = typer.Option(False, "--color-jitter", help="Enable ColorJitter"),
     gaussian_noise: bool = typer.Option(False, "--gaussian-noise", help="Enable GaussianNoise"),
     action_noise: bool = typer.Option(False, "--action-noise", help="Enable ActionNoise"),
+    speed_warp: bool = typer.Option(False, "--speed-warp", help="Enable SpeedWarp (0.8-1.2x)"),
     config: Optional[str] = typer.Option(None, help="Path to YAML config file (overrides flags)"),
     adapter: str = typer.Option("aloha", help="Robot adapter name"),
     multiply: int = typer.Option(1, help="Augmented copies per original episode"),
@@ -79,6 +80,7 @@ def augment(
             color_jitter=color_jitter,
             gaussian_noise=gaussian_noise,
             action_noise=action_noise,
+            speed_warp=speed_warp,
             adapter=resolved_adapter,
         )
         if transforms:
@@ -156,6 +158,7 @@ def list_augmentations() -> None:
     table.add_row("ColorJitter", "SequenceTransform", "-", "built-in")
     table.add_row("GaussianNoise", "FrameTransform", "-", "built-in")
     table.add_row("ActionNoise", "TrajectoryTransform", "-", "built-in")
+    table.add_row("SpeedWarp", "TrajectoryTransform", "-", "built-in")
 
     console.print(table)
 
@@ -179,6 +182,7 @@ def _build_transforms_from_flags(
     color_jitter: bool,
     gaussian_noise: bool,
     action_noise: bool,
+    speed_warp: bool,
     adapter,
 ) -> list:
     """Instantiate transforms based on CLI boolean flags."""
@@ -203,6 +207,11 @@ def _build_transforms_from_flags(
         from robotq.core.augmentations.noise import ActionNoise
 
         transforms.append(ActionNoise())
+
+    if speed_warp:
+        from robotq.core.augmentations.speed import SpeedWarp
+
+        transforms.append(SpeedWarp())
 
     return transforms
 

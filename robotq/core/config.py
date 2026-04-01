@@ -17,6 +17,7 @@ import yaml
 from robotq.core.augmentations.color import ColorJitter
 from robotq.core.augmentations.mirror import Mirror
 from robotq.core.augmentations.noise import ActionNoise, GaussianNoise
+from robotq.core.augmentations.speed import SpeedWarp
 from robotq.core.pipeline import Compose, OneOf, SomeOf
 from robotq.core.transform import RobotTransform
 
@@ -25,6 +26,7 @@ REGISTRY: dict[str, type] = {
     "ColorJitter": ColorJitter,
     "GaussianNoise": GaussianNoise,
     "ActionNoise": ActionNoise,
+    "SpeedWarp": SpeedWarp,
 }
 
 _COMPOSITE_TYPES = {"OneOf", "SomeOf"}

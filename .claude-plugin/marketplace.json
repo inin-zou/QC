@@ -1,0 +1,13 @@
+{
+  "name": "robotq",
+  "owner": {
+    "name": "YongkangZOU"
+  },
+  "plugins": [
+    {
+      "name": "robotq",
+      "source": "./plugins/robotq",
+      "description": "Augment LeRobot v3 robotics datasets with composable, action-aware transforms"
+    }
+  ]
+}

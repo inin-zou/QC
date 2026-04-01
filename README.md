@@ -33,7 +33,7 @@ RobotQ takes a LeRobot v3 dataset, applies a composable pipeline of augmentation
 | GaussianNoise | FrameTransform | Per-frame pixel noise |
 | ActionNoise | TrajectoryTransform | Gaussian perturbation on action trajectories |
 | SpeedWarp | TrajectoryTransform | Time-stretch episodes with interpolated actions |
-| BackgroundReplace | TrajectoryTransform | SD Inpainting background replacement (optional) |
+| BackgroundReplace | TrajectoryTransform | SD Inpainting background replacement (optional, `fast` method only — SAM2 `auto` method not yet integrated) |
 
 ### Four Interfaces
 
@@ -271,7 +271,7 @@ Manual: augmentations/mirror.py (critical integration — adapter + transform + 
 ### Quality Gates
 
 Between every phase:
-1. **Full test suite** — `pytest tests/unit/ -v` must pass (all 117 tests)
+1. **Full test suite** — `pytest tests/unit/ -v` must pass (started at 29, grew to 141)
 2. **Import smoke test** — verify all modules import without error
 3. **Code review agent** — dedicated reviewer checks against design-patterns.md
 4. **Demo checkpoint** — real aloha dataset loaded, augmented, written, and (at phase boundaries) pushed to Hub

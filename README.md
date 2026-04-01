@@ -193,6 +193,11 @@ robotq/
     └── skills/                 # 5 skills (augment, preview, configure, inspect, overview)
 ```
 
+**Tech stack:**
+- Python 3.12+, uv, Typer + Rich, Polars, OpenCV, Ruff, pytest
+- LeRobot v3 official API for dataset read/write
+- Stable Diffusion Inpainting (`runwayml/stable-diffusion-inpainting` via diffusers) for BackgroundReplace — optional, requires `uv pip install -e ".[generative]"`
+
 **Design choices:**
 - **Episode is the universal container** — every transform takes and returns an Episode. No loose dicts.
 - **4 transform base classes** — FrameTransform (per-frame random), SequenceTransform (temporally consistent), TrajectoryTransform (episode-level), RobotTransform (paired image+action via adapter).

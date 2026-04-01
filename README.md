@@ -323,12 +323,12 @@ robotq augment --dataset lerobot/aloha_static_cups_open --output test/smoke \
 
 ## Known Limitations
 
-- **Loader speed** — Decoding 4 camera videos per episode via OpenCV is ~30s/episode. Parallel camera decoding (`multiprocessing`) or `torchcodec` (when FFmpeg is available) would give a ~4x speedup. Acceptable for batch augmentation, but not for interactive use.
+- **Loader speed** — ~~30s/episode sequentially~~ Fixed: parallel camera decoding via `ThreadPoolExecutor` brings it to ~1s/episode (~27x speedup). OpenCV releases the GIL, so threading gives real parallelism across 4 camera streams.
 - **BackgroundReplace mask quality** — The `fast` method uses frame differencing, which produces rough masks. Works for proving the pipeline, but SAM2 segmentation would produce much cleaner robot/background separation.
 
 ## Roadmap
 
-- Parallel video decoding — multiprocessing across cameras for ~4x loader speedup
+- Episode-level parallelism — process multiple episodes concurrently
 - SAM2 integration — accurate foreground segmentation for BackgroundReplace
 - Rust kernels — PyO3 acceleration for frame processing hot loops
 - More robot adapters — single-arm, mobile manipulators

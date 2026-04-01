@@ -104,11 +104,11 @@ def load_dataset(
         task_id = int(task_indices[0])
         task_description = task_lookup.get(task_id, "")
 
-        # Decode video for each camera using OpenCV
-        frames: dict[str, list[np.ndarray]] = {}
-        for cam_name in camera_names:
+        # Decode video for each camera using OpenCV (parallel across cameras)
+        from concurrent.futures import ThreadPoolExecutor
+
+        def _decode_camera(cam_name: str) -> tuple[str, list[np.ndarray]]:
             video_key = f"observation.images.{cam_name}"
-            # Build video path from episode metadata
             chunk_idx = int(ep_row.get(f"videos/{video_key}/chunk_index", 0))
             file_idx = int(ep_row.get(f"videos/{video_key}/file_index", 0))
             video_path = (
@@ -118,15 +118,16 @@ def load_dataset(
                 / f"chunk-{chunk_idx:03d}"
                 / f"file-{file_idx:03d}.mp4"
             )
-
-            # Convert timestamps to frame indices for efficient decoding
             from_ts = float(ep_row.get(f"videos/{video_key}/from_timestamp", 0.0))
             to_ts = float(ep_row.get(f"videos/{video_key}/to_timestamp", 0.0))
             start_frame = round(from_ts * fps)
             end_frame = round(to_ts * fps)
+            return cam_name, decode_video(video_path, start_frame=start_frame, end_frame=end_frame)
 
-            # Decode only this episode's frames (seek + read range)
-            ep_frames = decode_video(video_path, start_frame=start_frame, end_frame=end_frame)
+        frames: dict[str, list[np.ndarray]] = {}
+        with ThreadPoolExecutor(max_workers=len(camera_names)) as pool:
+            results = pool.map(_decode_camera, camera_names)
+        for cam_name, ep_frames in results:
 
             # Validate frame count matches tabular data
             if len(ep_frames) != n_frames:

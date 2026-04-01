@@ -1,115 +1,99 @@
 # RobotQ
 
-Composable augmentation toolkit for LeRobot v3 datasets — CLI-first, with action-aware transforms.
+Composable augmentation toolkit for LeRobot v3 datasets. Augments robotics training data with action-aware transforms and uploads to HuggingFace Hub.
 
----
+**Live demo dataset:** [YongkangZOU/aloha-robotq-demo](https://huggingface.co/datasets/YongkangZOU/aloha-robotq-demo) — [Visualize](https://huggingface.co/spaces/lerobot/visualize_dataset?path=%2FYongkangZOU%2Faloha-robotq-demo%2Fepisode_0)
 
-## Key Features
+## What It Does
 
-- **Composable pipeline** — `Compose`, `OneOf`, `SomeOf` operators inspired by Albumentations, applicable to full robotics episodes
-- **Action-aware augmentation** — `Mirror` swaps left/right arm actions in the correct joint dimensions, not just pixels
-- **Adapter system** — robot-specific schema knowledge is encoded in adapters (e.g., `AlohaAdapter`) and injected at pipeline build time, making schema dependency explicit and extensible
-- **LeRobot v3 native** — reads and writes valid LeRobot v3 datasets via the official `LeRobotDataset` API
-- **HuggingFace Hub integration** — auto-uploads the output dataset and prints a direct visualizer link
-- **Temporal consistency** — `SequenceTransform` subclasses sample parameters once per episode so lighting and color remain stable across frames, preventing flickering
+RobotQ takes a LeRobot v3 dataset, applies a composable pipeline of augmentations (visual, action-aware, and temporal), and outputs a new valid LeRobot v3 dataset on HuggingFace Hub.
 
----
+**Key differentiator:** Unlike image-only augmentation tools, RobotQ understands that flipping a robot video horizontally requires also swapping left/right arm actions and negating mirror-sensitive joint axes. This is done through an adapter system that encodes robot-specific schema knowledge.
 
-## Installation
+### Available Augmentations
+
+| Name | Type | What It Does |
+|------|------|-------------|
+| Mirror | RobotTransform | Flip video + swap L/R arm actions via adapter |
+| ColorJitter | SequenceTransform | Brightness/contrast/saturation/hue (consistent per episode) |
+| GaussianNoise | FrameTransform | Per-frame pixel noise |
+| ActionNoise | TrajectoryTransform | Gaussian perturbation on action trajectories |
+| SpeedWarp | TrajectoryTransform | Time-stretch episodes with interpolated actions |
+
+### Three Interfaces
+
+- **CLI** — `robotq augment`, `robotq list`, `robotq preview`
+- **Python API** — `from robotq.core.pipeline import Compose`
+- **MCP Server** — AI agents can call `augment_dataset` as a tool
+
+## How to Run
+
+### Installation
 
 ```bash
-git clone https://github.com/yourname/robotq
-cd robotq
+git clone https://github.com/YongkangZOU/QC.git
+cd QC
 uv venv --python 3.12
 uv pip install -e ".[dev]"
 ```
 
-For generative augmentations (BackgroundReplace — requires GPU):
-
+Login to HuggingFace (for uploading):
 ```bash
-uv pip install -e ".[generative]"
+huggingface-cli login
 ```
 
----
-
-## Quick Start (CLI)
-
-Simple flag mode — one flag per augmentation:
+### Quick Start (CLI)
 
 ```bash
+# Augment with mirror + color jitter, upload to Hub
 robotq augment \
   --dataset lerobot/aloha_static_cups_open \
-  --output yourname/aloha-augmented \
+  --output YOUR_USERNAME/aloha-augmented \
   --mirror --color-jitter \
-  --adapter aloha --multiply 2
+  --adapter aloha \
+  --multiply 2
+
+# Preview before committing
+robotq augment ... --dry-run
+
+# Save before/after PNGs
+robotq preview \
+  --dataset lerobot/aloha_static_cups_open \
+  --mirror --color-jitter --adapter aloha
+
+# List available augmentations
+robotq list
 ```
 
-This loads the source dataset, applies Mirror and ColorJitter, writes 2x the original episode count, uploads to HuggingFace Hub, and prints a visualizer link.
-
----
-
-## Advanced Usage (config file)
-
-For composable pipelines with `OneOf`/`SomeOf` and per-transform probabilities, use a YAML config:
+### Config File (for complex pipelines)
 
 ```bash
-robotq augment --config pipeline.yaml
+robotq augment --config examples/aloha_basic.yaml
 ```
 
-`pipeline.yaml`:
-
 ```yaml
+# examples/aloha_basic.yaml
 dataset: lerobot/aloha_static_cups_open
-adapter: aloha_bimanual
-output: yourname/aloha_aug_v1
+adapter: aloha
+output: YOUR_USERNAME/aloha-augmented
 multiply: 2
 
 pipeline:
   - type: Mirror
     p: 0.5
-
-  - type: OneOf
-    p: 0.8
-    transforms:
-      - type: ColorJitter
-        brightness: 0.3
-        contrast: 0.2
-      - type: GaussianNoise
-        sigma: 0.02
-
-  - type: SpeedWarp
-    min_rate: 0.8
-    max_rate: 1.2
+  - type: ColorJitter
+    brightness: 0.3
+    contrast: 0.2
+    p: 1.0
 ```
 
-Config files can express arbitrary nesting, probabilities, and multiple augmentation branches. They are also easier for AI agents to generate and self-documenting in the repo.
-
-Other useful commands:
-
-```bash
-# Preview augmentation on episode 0 (saves before/after PNGs to preview/)
-robotq preview --dataset lerobot/aloha_static_cups_open --episode 0 --config pipeline.yaml
-
-# List available augmentations
-robotq list
-
-# List available robot adapters
-robotq adapters
-
-# Dry run: validate config and estimate output without processing
-robotq augment --config pipeline.yaml --dry-run
-```
-
----
-
-## Python API
-
-RobotQ is a library first. The CLI is a thin layer over the same objects you can import directly:
+### Python API
 
 ```python
 from robotq.core.pipeline import Compose
 from robotq.core.augmentations.color import ColorJitter
 from robotq.core.augmentations.mirror import Mirror
+from robotq.core.augmentations.speed import SpeedWarp
 from robotq.adapters.aloha import AlohaAdapter
 from robotq.io.loader import load_dataset
 from robotq.io.writer import write_dataset
@@ -117,96 +101,120 @@ from robotq.io.writer import write_dataset
 pipeline = Compose([
     Mirror(adapter=AlohaAdapter(), p=0.5),
     ColorJitter(brightness=0.2),
+    SpeedWarp(min_rate=0.9, max_rate=1.1),
 ])
 
 episodes = load_dataset("lerobot/aloha_static_cups_open", max_episodes=5)
 augmented = [pipeline(ep) for ep in episodes]
-write_dataset(episodes + augmented, repo_id="yourname/aloha-aug")
+write_dataset(episodes + augmented, repo_id="YOUR_USERNAME/aloha-augmented")
 ```
 
----
+### MCP Server (for AI agents)
 
-## Available Augmentations
+```bash
+uv pip install -e ".[mcp]"
+# Add to your .mcp.json or Claude Code config
+```
 
-| Name | Type | What it touches | Adapter required | Description |
-|------|------|-----------------|------------------|-------------|
-| Mirror | RobotTransform | Frames + actions + states | Yes | Horizontal flip of all camera frames, L/R arm joint swap and axis sign correction via adapter |
-| ColorJitter | SequenceTransform | Frames | No | Brightness, contrast, saturation, hue — params sampled once per episode for temporal consistency |
-| GaussianNoise | FrameTransform | Frames | No | Per-frame additive Gaussian pixel noise — each frame gets independent noise |
-| ActionNoise | TrajectoryTransform | Actions | No | Gaussian perturbation applied to the full action trajectory |
-| SpeedWarp | TrajectoryTransform | Full episode | No | Resamples episode at a different effective FPS with interpolated frames and actions |
-
-Generative (optional install):
-
-| Name | Type | What it touches | Adapter required | Description |
-|------|------|-----------------|------------------|-------------|
-| BackgroundReplace | SequenceTransform | Frames | No | Segments robot and objects via SAM2, inpaints a new background from a text prompt using Stable Diffusion |
-
----
+AI agents can then call `augment_dataset`, `list_augmentations`, and `preview_augmentation` as tools.
 
 ## Architecture
 
-RobotQ is structured as four layers with strict separation of concerns:
-
 ```
-core/          Transform base classes, Episode container, pipeline operators, augmentations
-io/            Dataset loader, writer, video decoder, schema parser
-cli/           Typer app — thin translation from flags/config to core/io calls
-adapters/      Robot-specific action schema knowledge
+robotq/
+├── core/                       # Engine layer
+│   ├── episode.py              # Episode dataclass (universal data container)
+│   ├── transform.py            # 4 base classes: Frame, Sequence, Trajectory, Robot
+│   ├── pipeline.py             # Compose, OneOf, SomeOf (Albumentations-style)
+│   ├── config.py               # YAML config -> pipeline builder
+│   └── augmentations/          # Mirror, ColorJitter, Noise, SpeedWarp
+├── io/                         # I/O layer
+│   ├── loader.py               # LeRobot API + OpenCV video decoding
+│   ├── writer.py               # LeRobot official writer (guarantees valid output)
+│   ├── video.py                # Pure MP4 decoder (decode only)
+│   └── schema.py               # JSON/JSONL metadata parsing
+├── adapters/                   # Robot-specific knowledge
+│   ├── base.py                 # ActionAdapter protocol
+│   └── aloha.py                # ALOHA bimanual (14-DOF, L/R arm swap)
+├── cli/main.py                 # Typer CLI (augment, preview, list)
+├── mcp/server.py               # MCP server for AI agent integration
+└── skill/robotq.md             # Claude Code skill
 ```
 
-The `Episode` dataclass is the universal data container — every transform receives and returns an `Episode` with frames, actions, states, and metadata. No loose dicts are passed across module boundaries.
-
-**Four transform base classes** enforce the correct dispatch pattern for each augmentation type:
-
-- `FrameTransform` — applies independently to each frame with different random params (prevents identical per-frame artifacts)
-- `SequenceTransform` — samples params once per episode, applies uniformly across all frames (prevents temporal flickering)
-- `TrajectoryTransform` — operates on the full episode at once; may change episode length, FPS, or metadata
-- `RobotTransform` — paired image and action transform; requires an `ActionAdapter` for robot schema awareness
-
-Pipeline operators (`Compose`, `OneOf`, `SomeOf`) are themselves `Transform` subclasses, so they nest arbitrarily. YAML configs map 1:1 to Python objects via a registry, enabling both human and agent-authored pipelines.
-
-The I/O layer is split into four non-overlapping modules: `loader.py` (read Hub or local), `video.py` (decode-only MP4), `schema.py` (parse info.json and tasks.jsonl), and `writer.py` (create and push LeRobotDataset). `writer.py` uses the official `LeRobotDataset.create() → add_frame() → save_episode() → finalize() → push_to_hub()` write path, guaranteeing valid v3 output.
-
----
+**Design choices:**
+- **Episode is the universal container** — every transform takes and returns an Episode. No loose dicts.
+- **4 transform base classes** — FrameTransform (per-frame random), SequenceTransform (temporally consistent), TrajectoryTransform (episode-level), RobotTransform (paired image+action via adapter).
+- **LeRobot official writer** — we intentionally rely on `LeRobotDataset.create()` to guarantee output compatibility with the HF visualizer and training tools.
+- **OpenCV for video decoding** — bypasses torchcodec FFmpeg dependency issues; frame-range seeking for efficiency.
 
 ## How AI Coding Agents Were Used
 
-RobotQ was built using a structured agentic workflow with 15 total agent dispatches across 3 phases.
+This project was built almost entirely through AI agent orchestration using Claude Code. The workflow:
 
-**Workflow overview:**
+### Brainstorming Phase
+- Collaborative product design session exploring competitive landscape (AugLab, Albumentations, RoboEngine)
+- Produced 6 design documents: product-design.md, architecture.md, design-patterns.md, ROADMAP.md, agentic-engineering.md, test.md
 
-1. **Brainstorming** — a brainstorming agent explored the problem space (what gaps exist in the LeRobot ecosystem, what the MVP should be), producing a product brief.
-2. **Design documents** — separate agents drafted `product-design.md`, `architecture.md`, `design-patterns.md`, and `agentic-engineering.md`. These docs became the source of truth for all subsequent agents.
-3. **Implementation plan** — `agentic-engineering.md` encodes a detailed dispatch plan: which agents to run in parallel, what each writes, what tests must pass before the next phase begins.
-4. **Parallel execution** — agents were dispatched in parallel batches using worktree isolation so they could work on independent modules without conflicting.
+### Implementation via Parallel Agent Dispatch
+The agentic-engineering.md playbook defined exact agent dispatch blocks for each phase:
 
-**Phase 1 (Foundation) — 5 agents + 1 review:**
-- Three agents ran simultaneously: Episode container (with unit tests), video decoder, and schema parser.
-- Two more agents ran in parallel once Phase 1A passed its gate: dataset loader and dataset writer.
-- A code-reviewer agent then checked all Phase 1 files against `design-patterns.md`.
+**Phase 1A** — 3 agents in parallel (worktree isolation):
+- Agent 1: Episode container + tests
+- Agent 2: Video decoder + tests
+- Agent 3: Schema parser + tests
 
-**Phase 2 (Core Augmentations) — 4 agents + 1 review:**
-- Four agents ran simultaneously: full transform base classes, noise augmentations (GaussianNoise + ActionNoise), adapter protocol and AlohaAdapter, and pipeline composition operators.
-- Mirror was implemented manually after Phase 2A, as it required careful integration of adapter + transform + video and served as a demo checkpoint.
-- A code-reviewer agent checked Phase 2 output.
+**Phase 1B** — 2 agents in parallel:
+- Agent 4: Dataset loader + tests
+- Agent 5: Dataset writer + tests
 
-**Phase 3 (CLI and Polish) — 3 agents + 1 review:**
-- Three agents ran simultaneously: CLI `augment`/`list` commands, YAML config parsing and pipeline registry, and README.
-- A final code-reviewer agent reviewed the full codebase.
+**Phase 2A** — 3 agents in parallel:
+- Agent 6: Noise augmentations + tests
+- Agent 7: Adapter system + tests
+- Agent 8: Pipeline composition + tests
 
-**Test-first development:** Every agent prompt included explicit instructions to write tests alongside implementation code and to run them before marking the task complete. Tests were a precondition for advancing to the next phase, not an afterthought.
+**Phase 3A** — 3 agents in parallel:
+- Agent 9: CLI (Typer + Rich)
+- Agent 10: Config parser + YAML examples
+- Agent 11: README
 
-**Review gates:** After each phase, a dedicated code-reviewer agent checked the output against the design patterns document — catching issues like modules violating I/O separation boundaries and missing error handling at validation boundaries.
+**Phase 4** — 2 agents in parallel:
+- Agent 12: SpeedWarp augmentation
+- Agent 13: MCP server
 
-**Agentic workflow caught real issues:** The review after Phase 1 flagged that the initial loader draft was passing loose dicts rather than Episode objects across a module boundary. The review after Phase 2 identified missing `p`-check logic in one transform's `apply()` before it reached integration testing. These were caught before they could propagate.
+### Quality Gates
+- **Validation gates** between phases: full test suite + import smoke tests
+- **Error handling review**: dedicated code-reviewer agent found 8 issues (3 critical), all fixed
+- **Integration testing**: real aloha dataset loaded, augmented, and pushed to Hub at each phase boundary
 
----
+### What the Agentic Workflow Caught
+1. **LeRobot v3.0 format mismatch** — initial research said per-episode files, but real datasets pack all episodes into single files with chunk/file indexing. Discovered during Phase 1C integration, loader rewritten from scratch.
+2. **torchcodec FFmpeg dependency** — LeRobot's default video decoder failed on macOS. Switched to OpenCV with frame-range seeking.
+3. **push_to_hub API change** — method lives on `LeRobotDataset`, not `LeRobotDatasetMetadata`. Found during real Hub upload test.
+4. **Silent frame padding** — code-reviewer agent flagged the loader silently padding frames when video/parquet frame counts disagreed. Changed to log warning + raise on zero frames.
+
+### Stats
+- **15+ agent dispatches** across 4 phases
+- **117 unit tests** written by agents + manual integration
+- **~3,200 lines of code** (excluding tests)
+- Design docs written before any code — agents followed the spec
+
+## Testing
+
+```bash
+# Run all unit tests
+uv run pytest tests/unit/ -v
+
+# Quick smoke test
+robotq list
+robotq augment --dataset lerobot/aloha_static_cups_open --output test/smoke \
+  --color-jitter --adapter aloha --max-episodes 1 --no-upload --dry-run
+```
+
+117 tests covering: Episode validation, video decoding, schema parsing, all 5 augmentations, pipeline composition, adapter arm-swap logic, config parsing, writer integrity checks.
 
 ## Roadmap
 
-- **SpeedWarp** — time-stretch augmentation with frame and action interpolation
-- **BackgroundReplace** — SAM2 segmentation + Stable Diffusion inpainting for background replacement
-- **MCP server** — expose `augment_dataset`, `preview_augmentation`, and `list_augmentations` as MCP tools so AI agents can augment datasets directly
-- **Rust kernels** — SIMD-accelerated frame flip and color jitter via PyO3/Maturin for batch episode processing performance
-- **More robot adapters** — single-arm manipulators, mobile manipulators, and custom DOF configurations
+- BackgroundReplace — SAM2 + Stable Diffusion Inpainting for generative scene changes
+- Rust kernels — PyO3 acceleration for frame processing hot loops
+- More robot adapters — single-arm, mobile manipulators
+- Training integration — direct use as a LeRobot training-time transform

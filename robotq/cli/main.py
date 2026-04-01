@@ -246,15 +246,15 @@ def preview(
         console.print(f"[bold blue]Camera:[/] {cam!r} — saved {len(saved_files)} PNGs to preview/")
 
     # -- 6. Print summary --------------------------------------------------------
-    orig_action = np.array(original.action)     # (T, D)
-    aug_action = np.array(augmented.action)
+    orig_action = original.actions     # (T, D)
+    aug_action = augmented.actions
 
     # Align lengths for diff (SpeedWarp may change frame count)
     min_t = min(len(orig_action), len(aug_action))
     action_diff = float(np.mean(np.abs(orig_action[:min_t] - aug_action[:min_t])))
 
-    orig_state = np.array(original.state)
-    aug_state = np.array(augmented.state)
+    orig_state = original.states
+    aug_state = augmented.states
     min_ts = min(len(orig_state), len(aug_state))
     state_diff = float(np.mean(np.abs(orig_state[:min_ts] - aug_state[:min_ts])))
 

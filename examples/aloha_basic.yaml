@@ -1,0 +1,12 @@
+dataset: lerobot/aloha_static_cups_open
+adapter: aloha
+output: test/aloha-aug
+multiply: 2
+
+pipeline:
+  - type: Mirror
+    p: 0.5
+  - type: ColorJitter
+    brightness: 0.3
+    contrast: 0.2
+    p: 1.0

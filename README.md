@@ -323,7 +323,6 @@ robotq augment --dataset lerobot/aloha_static_cups_open --output test/smoke \
 
 ## Known Limitations
 
-- **Loader speed** — ~~30s/episode sequentially~~ Fixed: parallel camera decoding via `ThreadPoolExecutor` brings it to ~1s/episode (~27x speedup). OpenCV releases the GIL, so threading gives real parallelism across 4 camera streams.
 - **BackgroundReplace mask quality** — The `fast` method uses frame differencing, which produces rough masks. Works for proving the pipeline, but SAM2 segmentation would produce much cleaner robot/background separation.
 
 ## Roadmap

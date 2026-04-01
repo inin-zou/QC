@@ -35,6 +35,8 @@ def augment(
     gaussian_noise: bool = typer.Option(False, "--gaussian-noise", help="Enable GaussianNoise"),
     action_noise: bool = typer.Option(False, "--action-noise", help="Enable ActionNoise"),
     speed_warp: bool = typer.Option(False, "--speed-warp", help="Enable SpeedWarp (0.8-1.2x)"),
+    background: Optional[str] = typer.Option(None, "--background", help="BackgroundReplace prompt (e.g. 'industrial kitchen')"),
+    background_method: str = typer.Option("fast", "--background-method", help="Background mask method: 'fast' or 'auto'"),
     config: Optional[str] = typer.Option(None, help="Path to YAML config file (overrides flags)"),
     adapter: str = typer.Option("aloha", help="Robot adapter name"),
     multiply: int = typer.Option(1, help="Augmented copies per original episode"),
@@ -81,6 +83,8 @@ def augment(
             gaussian_noise=gaussian_noise,
             action_noise=action_noise,
             speed_warp=speed_warp,
+            background=background,
+            background_method=background_method,
             adapter=resolved_adapter,
         )
         if transforms:
@@ -294,6 +298,7 @@ def list_augmentations() -> None:
     table.add_row("GaussianNoise", "FrameTransform", "-", "built-in")
     table.add_row("ActionNoise", "TrajectoryTransform", "-", "built-in")
     table.add_row("SpeedWarp", "TrajectoryTransform", "-", "built-in")
+    table.add_row("BackgroundReplace", "SequenceTransform", "-", "optional[generative]")
 
     console.print(table)
 
@@ -318,6 +323,8 @@ def _build_transforms_from_flags(
     gaussian_noise: bool,
     action_noise: bool,
     speed_warp: bool,
+    background: str | None = None,
+    background_method: str = "fast",
     adapter,
 ) -> list:
     """Instantiate transforms based on CLI boolean flags."""
@@ -347,6 +354,11 @@ def _build_transforms_from_flags(
         from robotq.core.augmentations.speed import SpeedWarp
 
         transforms.append(SpeedWarp())
+
+    if background is not None:
+        from robotq.core.augmentations.background import BackgroundReplace
+
+        transforms.append(BackgroundReplace(prompt=background, method=background_method))
 
     return transforms
 

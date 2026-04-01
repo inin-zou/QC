@@ -29,6 +29,13 @@ REGISTRY: dict[str, type] = {
     "SpeedWarp": SpeedWarp,
 }
 
+# Lazy-register BackgroundReplace to avoid importing torch at module load time
+try:
+    from robotq.core.augmentations.background import BackgroundReplace
+    REGISTRY["BackgroundReplace"] = BackgroundReplace
+except ImportError:
+    pass  # generative deps not installed
+
 _COMPOSITE_TYPES = {"OneOf", "SomeOf"}
 
 

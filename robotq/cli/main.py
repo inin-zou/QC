@@ -28,8 +28,8 @@ console = Console()
 
 @app.command()
 def augment(
-    dataset: str = typer.Option(..., help="HF repo ID, e.g. lerobot/aloha_static_cups_open"),
-    output: str = typer.Option(..., help="Output HF repo ID, e.g. user/augmented-dataset"),
+    dataset: Optional[str] = typer.Option(None, help="HF repo ID, e.g. lerobot/aloha_static_cups_open"),
+    output: Optional[str] = typer.Option(None, help="Output HF repo ID, e.g. user/augmented-dataset"),
     mirror: bool = typer.Option(False, "--mirror", help="Enable Mirror augmentation"),
     color_jitter: bool = typer.Option(False, "--color-jitter", help="Enable ColorJitter"),
     gaussian_noise: bool = typer.Option(False, "--gaussian-noise", help="Enable GaussianNoise"),
@@ -62,6 +62,14 @@ def augment(
         resolved_adapter = resolve_adapter(adapter)
         pipeline = build_pipeline(cfg, adapter=resolved_adapter)
         console.print(f"[bold blue]Pipeline loaded from config:[/] {config}")
+
+    # -- Validate required fields --------------------------------------------------
+    if not dataset:
+        console.print("[red]Error:[/] --dataset is required (or set 'dataset' in config YAML)")
+        raise typer.Exit(1)
+    if not output:
+        console.print("[red]Error:[/] --output is required (or set 'output' in config YAML)")
+        raise typer.Exit(1)
 
     # -- 2. Load dataset ---------------------------------------------------------
     console.print(f"[bold blue]Loading dataset:[/] {dataset}")

@@ -102,6 +102,11 @@ class RobotTransform(Transform):
 
     def __init__(self, adapter: ActionAdapter, p: float = 1.0) -> None:
         super().__init__(p=p)
+        if adapter is None:
+            raise ValueError(
+                f"{self.__class__.__name__} requires an adapter, got None. "
+                "Pass an ActionAdapter instance (e.g., AlohaAdapter())."
+            )
         self.adapter = adapter
 
     @abstractmethod

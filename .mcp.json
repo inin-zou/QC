@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "robotq": {
+      "command": "uv",
+      "args": ["run", "--directory", "/Users/yongkangzou/Desktop/ai projects/Qualia/QC", "python", "-m", "robotq.mcp.server"]
+    }
+  }
+}

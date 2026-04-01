@@ -20,6 +20,7 @@ dependencies = [
 
 [project.optional-dependencies]
 generative = ["torch", "diffusers", "segment-anything-2"]
+mcp = ["mcp[cli]"]
 dev = ["pytest", "ruff"]
 
 [project.scripts]

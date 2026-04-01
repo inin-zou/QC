@@ -31,14 +31,23 @@ class Mirror(RobotTransform):
             new_frames[cam] = [np.ascontiguousarray(np.fliplr(f)) for f in frame_list]
 
         # 2. Swap + flip actions
-        flip_signs = adapter.get_flip_signs().astype(episode.actions.dtype)
-        new_actions = adapter.swap_arms_batch(episode.actions) * flip_signs
-
-        # 3. Swap + flip states (only if state_dim matches action_dim)
-        if episode.states.shape[1] == episode.actions.shape[1]:
-            new_states = adapter.swap_arms_batch(episode.states) * flip_signs
+        flip_signs = adapter.get_flip_signs()
+        swapped_actions = adapter.swap_arms_batch(episode.actions)
+        if flip_signs.shape[0] == episode.actions.shape[1]:
+            new_actions = swapped_actions * flip_signs.astype(episode.actions.dtype)
         else:
-            # State dim differs from action dim — can't apply action adapter to states
+            # Adapter doesn't define flip signs for this action dim (e.g. generic adapter)
+            new_actions = swapped_actions
+
+        # 3. Swap + flip states (only if adapter supports this dim)
+        if episode.states.shape[1] == episode.actions.shape[1]:
+            swapped_states = adapter.swap_arms_batch(episode.states)
+            if flip_signs.shape[0] == episode.states.shape[1]:
+                new_states = swapped_states * flip_signs.astype(episode.states.dtype)
+            else:
+                new_states = swapped_states
+        else:
+            # State dim differs from action dim — adapter can't handle it
             new_states = episode.states.copy()
 
         # 4. Build new episode with updated metadata

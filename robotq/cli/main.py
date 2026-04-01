@@ -42,11 +42,18 @@ def augment(
     multiply: int = typer.Option(1, help="Augmented copies per original episode"),
     max_episodes: Optional[int] = typer.Option(None, help="Limit number of source episodes"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Print summary, don't process"),
+    preview_first: bool = typer.Option(False, "--preview-first", help="Preview episode 0 before full run"),
     no_upload: bool = typer.Option(False, "--no-upload", help="Write locally, skip push_to_hub"),
+    plain: bool = typer.Option(False, "--plain", help="Plain text output (no Rich formatting)"),
     token: Optional[str] = typer.Option(None, help="HF token for upload"),
 ) -> None:
     """Augment a LeRobot v3 dataset with composable transforms."""
     from robotq.core.pipeline import Compose
+
+    # -- 0. Plain mode: disable Rich markup ----------------------------------------
+    if plain:
+        console.highlight = False
+        console.markup = False
 
     # -- 1. Read config first (may override dataset/output/adapter/multiply) -----
     pipeline: Compose | None = None
@@ -114,6 +121,25 @@ def augment(
             no_upload=no_upload,
         )
         raise typer.Exit()
+
+    # -- 4b. Preview-first: show before/after for episode 0 ----------------------
+    if preview_first and pipeline is not None:
+        import copy as _copy
+        import os
+        import cv2
+        import numpy as np
+
+        console.print("[bold blue]Preview-first:[/] augmenting episode 0...")
+        preview_ep = pipeline(_copy.deepcopy(episodes[0]))
+        os.makedirs("preview", exist_ok=True)
+        cam = episodes[0].metadata.camera_names[0]
+        mid = episodes[0].num_frames // 2
+        cv2.imwrite("preview/preview_before.png", cv2.cvtColor(episodes[0].frames[cam][mid], cv2.COLOR_RGB2BGR))
+        cv2.imwrite("preview/preview_after.png", cv2.cvtColor(preview_ep.frames[cam][mid], cv2.COLOR_RGB2BGR))
+        action_diff = float(np.mean(np.abs(episodes[0].actions - preview_ep.actions[:episodes[0].num_frames])))
+        console.print(f"  Saved preview/preview_before.png and preview/preview_after.png")
+        console.print(f"  Action diff: {action_diff:.6f}")
+        console.print("  Continue with full augmentation? (Ctrl+C to abort)")
 
     # -- 5. Apply pipeline -------------------------------------------------------
     all_episodes = list(episodes)  # start with originals
@@ -307,6 +333,24 @@ def list_augmentations() -> None:
     table.add_row("ActionNoise", "TrajectoryTransform", "-", "built-in")
     table.add_row("SpeedWarp", "TrajectoryTransform", "-", "built-in")
     table.add_row("BackgroundReplace", "SequenceTransform", "-", "optional[generative]")
+
+    console.print(table)
+
+
+# ---------------------------------------------------------------------------
+# robotq adapters
+# ---------------------------------------------------------------------------
+
+@app.command()
+def adapters() -> None:
+    """Show available robot adapters."""
+    table = Table(title="Available Adapters")
+    table.add_column("Name", style="bold cyan")
+    table.add_column("Robot Type", style="magenta")
+    table.add_column("Mirror Support", style="green")
+    table.add_column("DOF")
+
+    table.add_row("aloha", "ALOHA", "L/R arm swap", "14")
 
     console.print(table)
 

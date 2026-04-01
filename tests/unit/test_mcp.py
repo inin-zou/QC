@@ -72,9 +72,7 @@ def test_list_augmentations_has_required_keys():
     required_keys = {"name", "type", "adapter", "description"}
     for item in result:
         assert isinstance(item, dict)
-        assert required_keys.issubset(item.keys()), (
-            f"Item missing required keys: {item}"
-        )
+        assert required_keys.issubset(item.keys()), f"Item missing required keys: {item}"
 
 
 def test_list_augmentations_includes_mirror():

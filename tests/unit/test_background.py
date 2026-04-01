@@ -21,8 +21,7 @@ def _make_episode(
     state_dim: int = 4,
 ) -> Episode:
     frames = [
-        np.random.randint(50, 200, (height, width, 3), dtype=np.uint8)
-        for _ in range(n_frames)
+        np.random.randint(50, 200, (height, width, 3), dtype=np.uint8) for _ in range(n_frames)
     ]
     return Episode(
         frames={"cam": frames},

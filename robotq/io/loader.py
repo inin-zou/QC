@@ -138,7 +138,6 @@ def load_dataset(
         with ThreadPoolExecutor(max_workers=len(camera_names)) as pool:
             results = pool.map(_decode_camera, camera_names)
         for cam_name, ep_frames in results:
-
             # Validate frame count matches tabular data
             if len(ep_frames) != n_frames:
                 logger.warning(
@@ -153,8 +152,8 @@ def load_dataset(
                     ep_frames = ep_frames[:n_frames]
                 elif len(ep_frames) == 0:
                     raise ValueError(
-                        f"Episode {ep_idx} camera '{cam_name}': decoded 0 frames "
-                        f"from {video_path}. Cannot pad from empty."
+                        f"Episode {ep_idx} camera '{cam_name}': decoded 0 frames. "
+                        f"Cannot pad from empty."
                     )
                 else:
                     while len(ep_frames) < n_frames:

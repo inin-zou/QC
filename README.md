@@ -31,7 +31,7 @@ RobotQ takes a LeRobot v3 dataset, applies a composable pipeline of augmentation
 ### Installation
 
 ```bash
-git clone https://github.com/YongkangZOU/QC.git
+git clone https://github.com/inin-zou/QC.git
 cd QC
 uv venv --python 3.12
 uv pip install -e ".[dev]"

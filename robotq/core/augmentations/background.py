@@ -62,7 +62,7 @@ class BackgroundReplace(TrajectoryTransform):
         self.device = device
         self._pipe = None
 
-    def _get_inpaint_pipe(self):
+    def _get_inpaint_pipe(self) -> object:
         """Lazy-load the Stable Diffusion Inpainting pipeline."""
         if self._pipe is not None:
             return self._pipe
@@ -129,7 +129,7 @@ class BackgroundReplace(TrajectoryTransform):
 
         return bg_mask
 
-    def _inpaint_frame(self, frame: np.ndarray, mask: np.ndarray, pipe) -> np.ndarray:
+    def _inpaint_frame(self, frame: np.ndarray, mask: np.ndarray, pipe: object) -> np.ndarray:
         """Inpaint a single frame using Stable Diffusion."""
         from PIL import Image
 

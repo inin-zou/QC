@@ -12,6 +12,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from robotq.adapters.base import ActionAdapter
+
 import yaml
 
 from robotq.core.augmentations.color import ColorJitter
@@ -19,7 +21,7 @@ from robotq.core.augmentations.mirror import Mirror
 from robotq.core.augmentations.noise import ActionNoise, GaussianNoise
 from robotq.core.augmentations.speed import SpeedWarp
 from robotq.core.pipeline import Compose, OneOf, SomeOf
-from robotq.core.transform import RobotTransform
+from robotq.core.transform import RobotTransform, Transform
 
 REGISTRY: dict[str, type] = {
     "Mirror": Mirror,
@@ -40,7 +42,7 @@ except ImportError:
 _COMPOSITE_TYPES = {"OneOf", "SomeOf"}
 
 
-def _build_transform(item: dict[str, Any], adapter: Any) -> Any:
+def _build_transform(item: dict[str, Any], adapter: ActionAdapter | None) -> Transform:
     """Build a single transform (or composite) from a config dict entry."""
     item = dict(item)  # shallow copy so we can pop without mutating caller's data
     type_name: str = item.pop("type")
@@ -74,7 +76,7 @@ def _build_transform(item: dict[str, Any], adapter: Any) -> Any:
     return cls(**item)
 
 
-def build_pipeline(config: dict, adapter: Any = None) -> Compose:
+def build_pipeline(config: dict, adapter: ActionAdapter | None = None) -> Compose:
     """Build a Compose pipeline from a parsed YAML config dict.
 
     Parameters
@@ -113,7 +115,7 @@ def load_config(path: str | Path) -> dict:
         return yaml.safe_load(fh)
 
 
-def resolve_adapter(name: str) -> Any:
+def resolve_adapter(name: str) -> ActionAdapter:
     """Map an adapter name string to an adapter instance.
 
     Parameters

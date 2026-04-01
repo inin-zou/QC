@@ -387,7 +387,7 @@ def adapters() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _resolve_adapter(name: str):
+def _resolve_adapter(name: str) -> object:
     """Resolve an adapter name to an adapter instance."""
     from robotq.core.config import resolve_adapter
 
@@ -406,7 +406,7 @@ def _build_transforms_from_flags(
     speed_warp: bool,
     background: str | None = None,
     background_method: str = "fast",
-    adapter,
+    adapter: object,
 ) -> list:
     """Instantiate transforms based on CLI boolean flags."""
     transforms = []
@@ -449,7 +449,7 @@ def _print_dry_run_summary(
     dataset: str,
     output: str,
     episodes: list,
-    pipeline,
+    pipeline: object | None,
     multiply: int,
     no_upload: bool,
 ) -> None:

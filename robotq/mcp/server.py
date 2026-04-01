@@ -39,7 +39,7 @@ _AUGMENTATION_NAME_MAP: dict[str, str] = {
 }
 
 
-def _resolve_augmentation_class(name: str):
+def _resolve_augmentation_class(name: str) -> type:
     """Import and return an augmentation class by its short name."""
     canon = _AUGMENTATION_NAME_MAP.get(name)
     if canon is None:
@@ -73,8 +73,8 @@ def _resolve_augmentation_class(name: str):
 
 def _build_pipeline_from_names(
     names: list[str],
-    adapter=None,
-):
+    adapter: object | None = None,
+) -> object:
     """Build a Compose pipeline from a list of short augmentation names."""
     from robotq.core.pipeline import Compose
     from robotq.core.transform import RobotTransform

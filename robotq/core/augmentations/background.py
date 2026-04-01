@@ -16,12 +16,12 @@ import cv2
 import numpy as np
 
 from robotq.core.episode import Episode
-from robotq.core.transform import SequenceTransform
+from robotq.core.transform import TrajectoryTransform
 
 logger = logging.getLogger(__name__)
 
 
-class BackgroundReplace(SequenceTransform):
+class BackgroundReplace(TrajectoryTransform):
     """Replace the background of robot videos using inpainting.
 
     The robot and task objects are segmented (kept), and the background
@@ -160,29 +160,12 @@ class BackgroundReplace(SequenceTransform):
         composite = (frame * (1 - mask_3ch) + result_np * mask_3ch).astype(np.uint8)
         return composite
 
-    def get_params(self, episode: Episode) -> dict:
-        """Compute background mask once for the episode."""
+    def apply_to_episode(self, episode: Episode) -> Episode:
+        """Replace backgrounds across the episode using inpainting."""
         cameras = self.cameras or episode.metadata.camera_names
-        cam = cameras[0]  # Compute mask from primary camera
+        cam = cameras[0]
         frames = episode.frames[cam]
         mask = self._compute_mask_fast(frames)
-        return {"mask": mask, "cameras": cameras}
-
-    def apply_to_frame(self, frame: np.ndarray, params: dict) -> np.ndarray:
-        """This is called per-frame but we need the pipe — override apply() instead."""
-        # Not used directly — see apply() override below
-        return frame
-
-    def apply(self, episode: Episode) -> Episode:
-        """Override apply to handle the inpainting pipeline."""
-        import random as _random
-
-        if _random.random() > self.p:
-            return episode
-
-        params = self.get_params(episode)
-        mask = params["mask"]
-        cameras = params["cameras"]
         pipe = self._get_inpaint_pipe()
 
         new_frames = {}

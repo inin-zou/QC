@@ -156,7 +156,11 @@ def augment(
         )
         console.print("  Saved preview/preview_before.png and preview/preview_after.png")
         console.print(f"  Action diff: {action_diff:.6f}")
-        console.print("  Continue with full augmentation? (Ctrl+C to abort)")
+        try:
+            input("  Press Enter to continue with full augmentation (Ctrl+C to abort)... ")
+        except KeyboardInterrupt:
+            console.print("\n  Aborted.")
+            raise typer.Exit(0)
 
     # -- 5. Apply pipeline -------------------------------------------------------
     all_episodes = list(episodes)  # start with originals
@@ -384,11 +388,12 @@ def adapters() -> None:
 
 def _resolve_adapter(name: str):
     """Resolve an adapter name to an adapter instance."""
-    if name == "aloha":
-        from robotq.adapters.aloha import AlohaAdapter
+    from robotq.core.config import resolve_adapter
 
-        return AlohaAdapter()
-    raise typer.BadParameter(f"Unknown adapter: {name!r}. Available: aloha")
+    try:
+        return resolve_adapter(name)
+    except ValueError as e:
+        raise typer.BadParameter(str(e)) from e
 
 
 def _build_transforms_from_flags(

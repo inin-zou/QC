@@ -97,7 +97,7 @@ def write_dataset(
     # ------------------------------------------------------------------
     create_kwargs: dict = dict(
         repo_id=repo_id,
-        fps=int(first.metadata.fps),
+        fps=round(first.metadata.fps),
         features=features,
         robot_type=first.metadata.robot_type,
     )
@@ -148,15 +148,21 @@ def write_dataset(
     # Optionally push to Hub
     # ------------------------------------------------------------------
     if not local_only:
-        # LeRobot's push_to_hub uses HfApi() which reads the token from
-        # the environment (HF_TOKEN) or from ``huggingface-cli login``.
-        # If a token was explicitly provided, inject it into the env so
-        # that HfApi picks it up.
         if token is not None:
             import os
 
+            _prev_token = os.environ.get("HF_TOKEN")
             os.environ["HF_TOKEN"] = token
-        dataset.push_to_hub()
+            try:
+                dataset.push_to_hub()
+            finally:
+                # Restore previous token state to avoid leaking into long-lived processes
+                if _prev_token is None:
+                    os.environ.pop("HF_TOKEN", None)
+                else:
+                    os.environ["HF_TOKEN"] = _prev_token
+        else:
+            dataset.push_to_hub()
 
     return generate_visualizer_link(repo_id)
 

@@ -33,12 +33,14 @@ RobotQ takes a LeRobot v3 dataset, applies a composable pipeline of augmentation
 | GaussianNoise | FrameTransform | Per-frame pixel noise |
 | ActionNoise | TrajectoryTransform | Gaussian perturbation on action trajectories |
 | SpeedWarp | TrajectoryTransform | Time-stretch episodes with interpolated actions |
+| BackgroundReplace | TrajectoryTransform | SD Inpainting background replacement (optional) |
 
-### Three Interfaces
+### Four Interfaces
 
-- **CLI** — `robotq augment`, `robotq list`, `robotq preview`
+- **CLI** — `robotq augment`, `robotq preview`, `robotq list`, `robotq adapters`
 - **Python API** — `from robotq.core.pipeline import Compose`
-- **MCP Server** — AI agents can call `augment_dataset` as a tool
+- **MCP Server** — 6 tools: `augment_dataset`, `inspect_dataset`, `generate_config`, etc.
+- **Claude Code Plugin** — 5 skills + MCP, install with `/plugin marketplace add inin-zou/QC`
 
 **Interactive notebook:** [examples/demo.ipynb](examples/demo.ipynb) — full walkthrough with visualizations (runs on GitHub)
 
@@ -184,9 +186,11 @@ robotq/
 ├── adapters/                   # Robot-specific knowledge
 │   ├── base.py                 # ActionAdapter protocol
 │   └── aloha.py                # ALOHA bimanual (14-DOF, L/R arm swap)
-├── cli/main.py                 # Typer CLI (augment, preview, list)
-├── mcp/server.py               # MCP server for AI agent integration
-└── skill/robotq.md             # Claude Code skill
+├── cli/main.py                 # Typer CLI (augment, preview, list, adapters)
+├── mcp/server.py               # MCP server (6 tools for AI agents)
+└── plugins/robotq/             # Claude Code plugin marketplace
+    ├── commands/               # Slash commands (/robotq:augment, etc.)
+    └── skills/                 # 5 skills (augment, preview, configure, inspect, overview)
 ```
 
 **Design choices:**
@@ -283,8 +287,8 @@ The error handling review alone found 8 issues (3 critical: silent frame padding
 
 ### Stats
 - **15+ agent dispatches** across 4 phases
-- **117 unit tests** written by agents + manual integration
-- **~3,200 lines of code** (excluding tests)
+- **141 unit tests** written by agents + manual integration
+- **~2,500 lines of source code** + ~1,700 lines of tests
 - **6 design documents** written before any code — agents followed the spec
 - Design docs and agent playbook available in `.claude/docs/`
 
@@ -311,11 +315,11 @@ robotq augment --dataset lerobot/aloha_static_cups_open --output test/smoke \
   --color-jitter --adapter aloha --max-episodes 1 --no-upload --dry-run
 ```
 
-117 tests covering: Episode validation, video decoding, schema parsing, all 5 augmentations, pipeline composition, adapter arm-swap logic, config parsing, writer integrity checks.
+141 tests covering: Episode validation, video decoding, schema parsing, all 6 augmentations, pipeline composition, adapter arm-swap logic, config parsing, writer integrity checks, MCP server tools, loader integration.
 
 ## Roadmap
 
-- BackgroundReplace — SAM2 + Stable Diffusion Inpainting for generative scene changes
 - Rust kernels — PyO3 acceleration for frame processing hot loops
 - More robot adapters — single-arm, mobile manipulators
+- SAM2 integration — accurate foreground segmentation for BackgroundReplace (currently uses motion-based masking)
 - Training integration — direct use as a LeRobot training-time transform

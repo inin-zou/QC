@@ -21,7 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 generative = ["torch", "diffusers", "transformers", "accelerate", "segment-anything-2"]
 mcp = ["mcp[cli]"]
-dev = ["pytest", "ruff"]
+dev = ["pytest", "ruff", "matplotlib", "jupyter"]
 
 [project.scripts]
 robotq = "robotq.cli.main:app"

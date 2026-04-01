@@ -75,6 +75,9 @@ class SomeOf(Transform):
     ) -> None:
         super().__init__(p=p)
         self.transforms = transforms
+        n_min, n_max = n
+        if n_min < 0 or n_max < n_min:
+            raise ValueError(f"SomeOf: n must be (min, max) with 0 <= min <= max, got {n!r}")
         self.n = n
 
     def apply(self, episode: Episode) -> Episode:

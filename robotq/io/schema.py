@@ -9,7 +9,10 @@ import json
 from pathlib import Path
 
 # Keys that must be present in info.json for the file to be considered valid.
-_REQUIRED_INFO_KEYS = ("codebase_version", "fps", "total_episodes", "features")
+_REQUIRED_INFO_KEYS = (
+    "codebase_version", "fps", "total_episodes", "features",
+    "chunks_size", "data_path", "video_path",
+)
 
 
 def parse_info(path: str | Path) -> dict:

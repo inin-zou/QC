@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "robotq"
+version = "0.1.0"
+description = "Composable augmentation toolkit for LeRobot v3 datasets"
+requires-python = ">=3.12"
+dependencies = [
+    "lerobot>=0.4.0",
+    "polars",
+    "numpy",
+    "opencv-python-headless",
+    "typer",
+    "rich",
+    "huggingface_hub",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+generative = ["torch", "diffusers", "segment-anything-2"]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+robotq = "robotq.cli.main:app"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

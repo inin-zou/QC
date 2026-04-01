@@ -1,20 +1,20 @@
 """Dataset loader for LeRobot v3 datasets.
 
-Downloads (or reads locally) a LeRobot v3 dataset and converts each episode
-into the canonical :class:`~robotq.core.episode.Episode` container.
+Uses LeRobot's API for metadata and tabular data, and OpenCV for video
+decoding (bypasses torchcodec dependency issues).
 """
 
 from __future__ import annotations
 
-import os
+import logging
 from pathlib import Path
 
 import numpy as np
-import polars as pl
-from huggingface_hub import snapshot_download
 
 from robotq.core.episode import Episode, EpisodeMetadata
-from robotq.io import schema, video
+from robotq.io.video import decode_video
+
+logger = logging.getLogger(__name__)
 
 
 def load_dataset(
@@ -28,82 +28,126 @@ def load_dataset(
     Parameters
     ----------
     repo_id:
-        HuggingFace Hub repository ID (e.g. ``"lerobot/aloha_static_cups_open"``).
-        Used for ``snapshot_download`` when *local_dir* is not provided.
+        HuggingFace Hub dataset ID (e.g. ``"lerobot/aloha_static_cups_open"``).
     max_episodes:
-        Maximum number of episodes to load.  ``None`` means load all episodes
-        present in the dataset.
+        Maximum number of episodes to load. None means load all.
     local_dir:
-        If provided, read the dataset from this local directory instead of
-        downloading from the Hub.
-
-    Returns
-    -------
-    list[Episode]
-        One :class:`Episode` per loaded episode, ordered by episode index.
+        If provided, read from this local directory instead of downloading.
     """
-    # ------------------------------------------------------------------
-    # 1. Resolve dataset root
-    # ------------------------------------------------------------------
+    from lerobot.datasets.lerobot_dataset import LeRobotDataset
+
+    # Load dataset via LeRobot API (downloads if needed, parses metadata)
+    kwargs: dict = {"repo_id": repo_id}
     if local_dir is not None:
-        dataset_root = Path(local_dir)
-    else:
-        dataset_root = Path(snapshot_download(repo_id))
+        kwargs["root"] = local_dir
+    dataset = LeRobotDataset(**kwargs)
 
-    # ------------------------------------------------------------------
-    # 2. Parse metadata
-    # ------------------------------------------------------------------
-    info = schema.parse_info(dataset_root / "meta" / "info.json")
-    tasks = schema.parse_tasks(dataset_root / "meta" / "tasks.jsonl")
+    # Extract metadata
+    fps = float(dataset.fps)
+    robot_type = dataset.meta.robot_type or "unknown"
+    total_episodes = dataset.meta.total_episodes
 
-    fps: float = float(info["fps"])
-    robot_type: str = info.get("robot_type", "unknown")
-    camera_names: list[str] = schema.get_camera_names(info)
-    total_episodes: int = info["total_episodes"]
+    # Camera names from features
+    camera_names = sorted(
+        key.removeprefix("observation.images.")
+        for key in dataset.features
+        if key.startswith("observation.images.")
+    )
 
+    # Task lookup from meta
+    task_lookup: dict[int, str] = {}
+    if hasattr(dataset.meta, "tasks") and dataset.meta.tasks is not None:
+        tasks_df = dataset.meta.tasks
+        for task_desc, row in tasks_df.iterrows():
+            task_lookup[int(row["task_index"])] = str(task_desc)
+
+    # Dataset root on disk
+    dataset_root = Path(dataset.root)
+
+    # Validate dataset is not empty
+    if total_episodes == 0:
+        raise ValueError(f"Dataset '{repo_id}' contains 0 episodes.")
+
+    # Determine how many episodes to load
     num_episodes = total_episodes
     if max_episodes is not None:
         num_episodes = min(max_episodes, total_episodes)
 
-    # Build a task_index -> task description lookup
-    task_lookup: dict[int, str] = {t["task_index"]: t["task"] for t in tasks}
+    # Read episode metadata to get boundaries and file paths
+    episodes_meta = dataset.meta.episodes
+    # hf_dataset has all tabular data
+    hf_ds = dataset.hf_dataset
 
-    # ------------------------------------------------------------------
-    # 3. Load each episode
-    # ------------------------------------------------------------------
     episodes: list[Episode] = []
 
     for ep_idx in range(num_episodes):
-        # 3a. Read parquet
-        data_path = dataset_root / schema.get_data_path(info, ep_idx)
-        df = pl.read_parquet(data_path)
+        ep_row = episodes_meta[ep_idx]
 
-        # 3b. Filter to this episode
-        ep_df = df.filter(pl.col("episode_index") == ep_idx)
+        # Get frame range from episode metadata
+        from_idx = int(ep_row["dataset_from_index"])
+        to_idx = int(ep_row["dataset_to_index"])
+        n_frames = to_idx - from_idx
 
-        # 3c. Extract actions
-        actions = np.array(ep_df.get_column("action").to_list(), dtype=np.float32)
+        if n_frames <= 0:
+            raise ValueError(
+                f"Episode {ep_idx} has invalid frame range [{from_idx}, {to_idx}) "
+                f"in dataset '{repo_id}'."
+            )
 
-        # 3d. Extract states
-        states = np.array(
-            ep_df.get_column("observation.state").to_list(), dtype=np.float32
-        )
+        # Extract actions and states from hf_dataset
+        ep_slice = hf_ds.select(range(from_idx, to_idx))
+        actions = np.array(ep_slice["action"], dtype=np.float32)
+        states = np.array(ep_slice["observation.state"], dtype=np.float32)
 
-        # 3e. Decode video for each camera
+        # Task info
+        task_indices = ep_slice["task_index"]
+        task_id = int(task_indices[0])
+        task_description = task_lookup.get(task_id, "")
+
+        # Decode video for each camera using OpenCV
         frames: dict[str, list[np.ndarray]] = {}
         for cam_name in camera_names:
             video_key = f"observation.images.{cam_name}"
-            vid_rel_path = schema.get_video_path(info, ep_idx, video_key)
-            vid_abs_path = os.path.join(dataset_root, vid_rel_path)
-            frames[cam_name] = video.decode_video(vid_abs_path)
+            # Build video path from episode metadata
+            chunk_idx = int(ep_row.get(f"videos/{video_key}/chunk_index", 0))
+            file_idx = int(ep_row.get(f"videos/{video_key}/file_index", 0))
+            video_path = (
+                dataset_root
+                / "videos"
+                / video_key
+                / f"chunk-{chunk_idx:03d}"
+                / f"file-{file_idx:03d}.mp4"
+            )
 
-        # 3f. Look up task info
-        task_indices = ep_df.get_column("task_index").to_list()
-        # Use the first row's task_index as representative for the episode
-        task_id = int(task_indices[0]) if task_indices else 0
-        task_description = task_lookup.get(task_id, "")
+            # Convert timestamps to frame indices for efficient decoding
+            from_ts = float(ep_row.get(f"videos/{video_key}/from_timestamp", 0.0))
+            to_ts = float(ep_row.get(f"videos/{video_key}/to_timestamp", 0.0))
+            start_frame = round(from_ts * fps)
+            end_frame = round(to_ts * fps)
 
-        # 3g. Build Episode
+            # Decode only this episode's frames (seek + read range)
+            ep_frames = decode_video(video_path, start_frame=start_frame, end_frame=end_frame)
+
+            # Validate frame count matches tabular data
+            if len(ep_frames) != n_frames:
+                logger.warning(
+                    "Episode %d camera '%s': decoded %d frames but expected %d. "
+                    "Trimming/padding to match.",
+                    ep_idx, cam_name, len(ep_frames), n_frames,
+                )
+                if len(ep_frames) > n_frames:
+                    ep_frames = ep_frames[:n_frames]
+                elif len(ep_frames) == 0:
+                    raise ValueError(
+                        f"Episode {ep_idx} camera '{cam_name}': decoded 0 frames "
+                        f"from {video_path}. Cannot pad from empty."
+                    )
+                else:
+                    while len(ep_frames) < n_frames:
+                        ep_frames.append(ep_frames[-1].copy())
+
+            frames[cam_name] = ep_frames
+
         metadata = EpisodeMetadata(
             episode_index=ep_idx,
             task_description=task_description,
@@ -114,12 +158,7 @@ def load_dataset(
         )
 
         episodes.append(
-            Episode(
-                frames=frames,
-                actions=actions,
-                states=states,
-                metadata=metadata,
-            )
+            Episode(frames=frames, actions=actions, states=states, metadata=metadata)
         )
 
     return episodes

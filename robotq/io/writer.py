@@ -136,6 +136,14 @@ def write_dataset(
     # ------------------------------------------------------------------
     dataset.finalize()
 
+    # Verify episode count matches expectation
+    written_count = dataset.meta.total_episodes
+    if written_count != len(episodes):
+        raise RuntimeError(
+            f"Writer integrity check failed: expected {len(episodes)} episodes, "
+            f"finalize() produced {written_count}."
+        )
+
     # ------------------------------------------------------------------
     # Optionally push to Hub
     # ------------------------------------------------------------------

@@ -45,3 +45,10 @@ robotq adapters
 | ActionNoise | TrajectoryTransform | Gaussian perturbation on actions |
 | SpeedWarp | TrajectoryTransform | Time-stretch episodes |
 | BackgroundReplace | TrajectoryTransform | SD Inpainting background replacement |
+
+## Available Adapters
+
+| Name | Robot Type | Mirror Behavior |
+|------|-----------|-----------------|
+| `aloha` | ALOHA bimanual (14-DOF) | Swaps L/R arm actions + negates waist joints |
+| `generic` | Any single-arm | Flips video only, actions/states unchanged |

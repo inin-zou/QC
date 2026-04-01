@@ -309,6 +309,13 @@ def list_adapters() -> list[dict]:
             "mirror_support": "L/R arm swap (7 left + 7 right joints)",
             "description": "ALOHA bimanual robot with 14-DOF (waist, shoulder, elbow, forearm_roll, wrist_angle, wrist_rotate, gripper per arm)",
         },
+        {
+            "name": "generic",
+            "robot_type": "Any single-arm",
+            "dof": "any",
+            "mirror_support": "Video flip only (actions/states unchanged)",
+            "description": "Generic adapter for single-arm or non-bimanual robots. Mirror flips video only.",
+        },
     ]
 
 

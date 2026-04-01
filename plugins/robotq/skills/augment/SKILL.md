@@ -77,5 +77,6 @@ write_dataset(episodes + augmented, repo_id="USERNAME/augmented")
 - `--dry-run` — preview what would happen without processing
 - `--no-upload` — write locally, skip Hub push
 - `--preview-first` — save before/after PNGs for episode 0 before full run
-- `--adapter aloha` — required for Mirror (encodes robot arm layout)
+- `--adapter aloha` — for ALOHA bimanual robots (Mirror swaps L/R arms)
+- `--adapter generic` — for single-arm robots (Mirror flips video only, actions unchanged)
 - `--multiply N` — number of augmented copies per original episode

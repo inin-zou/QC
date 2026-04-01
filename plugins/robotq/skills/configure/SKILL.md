@@ -11,7 +11,7 @@ Create a YAML config file for complex augmentation pipelines with Compose/OneOf/
 
 ```yaml
 dataset: lerobot/aloha_static_cups_open
-adapter: aloha          # Required for Mirror
+adapter: aloha          # 'aloha' for bimanual, 'generic' for single-arm
 output: USERNAME/output  # HF Hub repo ID
 multiply: 2              # Augmented copies per original
 

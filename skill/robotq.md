@@ -104,7 +104,7 @@ pipeline:
 
 ## Key Concepts
 
-- **Adapter**: Robot-specific knowledge (which joints are left/right arm). Required for `Mirror`. Use `aloha` for ALOHA bimanual robots.
+- **Adapter**: Robot-specific knowledge (which joints are left/right arm). Required for `Mirror`. Use `aloha` for ALOHA bimanual robots, `generic` for single-arm robots (video flip only).
 - **Multiply**: How many augmented copies per original episode. `--multiply 2` with 50 episodes = 150 total (50 original + 100 augmented).
 - **Temporal consistency**: `ColorJitter` samples parameters once per episode (not per frame), preventing video flickering.
 - **`--dry-run`**: Preview what would happen without processing.

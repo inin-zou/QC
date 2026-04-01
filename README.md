@@ -10,6 +10,20 @@ RobotQ takes a LeRobot v3 dataset, applies a composable pipeline of augmentation
 
 **Key differentiator:** Unlike image-only augmentation tools, RobotQ understands that flipping a robot video horizontally requires also swapping left/right arm actions and negating mirror-sensitive joint axes. This is done through an adapter system that encodes robot-specific schema knowledge.
 
+### Before / After
+
+**Mirror augmentation** (flips video + swaps L/R arm actions):
+
+| Before | After (Mirror + ColorJitter) |
+|--------|------------------------------|
+| ![before](docs/images/before_mirror.png) | ![after](docs/images/after_mirror.png) |
+
+**BackgroundReplace** (SD Inpainting — "industrial kitchen"):
+
+| Before | After |
+|--------|-------|
+| ![before](docs/images/before_background.png) | ![after](docs/images/after_background.png) |
+
 ### Available Augmentations
 
 | Name | Type | What It Does |

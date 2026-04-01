@@ -118,6 +118,12 @@ uv pip install -e ".[mcp]"
 
 AI agents can then call `augment_dataset`, `list_augmentations`, and `preview_augmentation` as tools.
 
+### Claude Code Skill
+
+RobotQ ships with a Claude Code skill at `skill/robotq.md` that teaches AI agents how to use the tool. When installed, Claude Code will know how to augment LeRobot datasets using the CLI, Python API, or MCP tools — including which augmentations to recommend, how adapters work, and how to write pipeline configs.
+
+This follows the same pattern as [HuggingFace's dataset skills](https://github.com/huggingface/skills), making RobotQ a first-class citizen in the AI agent tooling ecosystem.
+
 ## Architecture
 
 ```

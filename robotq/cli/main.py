@@ -142,6 +142,141 @@ def augment(
 
 
 # ---------------------------------------------------------------------------
+# robotq preview
+# ---------------------------------------------------------------------------
+
+@app.command()
+def preview(
+    dataset: str = typer.Option(..., help="HF repo ID"),
+    episode: int = typer.Option(0, help="Episode index to preview"),
+    mirror: bool = typer.Option(False, "--mirror", help="Enable Mirror"),
+    color_jitter: bool = typer.Option(False, "--color-jitter", help="Enable ColorJitter"),
+    gaussian_noise: bool = typer.Option(False, "--gaussian-noise", help="Enable GaussianNoise"),
+    action_noise: bool = typer.Option(False, "--action-noise", help="Enable ActionNoise"),
+    speed_warp: bool = typer.Option(False, "--speed-warp", help="Enable SpeedWarp"),
+    config: Optional[str] = typer.Option(None, help="Path to YAML config"),
+    adapter: str = typer.Option("aloha", help="Robot adapter name"),
+) -> None:
+    """Preview augmentation on a single episode. Saves before/after PNGs."""
+    import copy
+    import os
+    import numpy as np
+    import cv2
+    from robotq.core.pipeline import Compose
+
+    # -- 1. Load dataset (just enough episodes to reach the requested index) ----
+    console.print(f"[bold blue]Loading dataset:[/] {dataset}  (episode {episode})")
+    from robotq.io.loader import load_dataset as _load_dataset
+
+    episodes = _load_dataset(dataset, max_episodes=episode + 1)
+    original = episodes[episode]
+    console.print(
+        f"  Loaded episode {episode}: [green]{original.num_frames}[/] frames, "
+        f"action_dim={original.action_dim}, state_dim={original.state_dim}"
+    )
+
+    # -- 2. Build pipeline -------------------------------------------------------
+    pipeline: Compose | None = None
+
+    if config is not None:
+        from robotq.core.config import load_config, build_pipeline, resolve_adapter
+
+        cfg = load_config(config)
+        adapter = cfg.get("adapter", adapter)
+        resolved_adapter = resolve_adapter(adapter)
+        pipeline = build_pipeline(cfg, adapter=resolved_adapter)
+        console.print(f"[bold blue]Pipeline loaded from config:[/] {config}")
+    else:
+        resolved_adapter = _resolve_adapter(adapter)
+        transforms = _build_transforms_from_flags(
+            mirror=mirror,
+            color_jitter=color_jitter,
+            gaussian_noise=gaussian_noise,
+            action_noise=action_noise,
+            speed_warp=speed_warp,
+            adapter=resolved_adapter,
+        )
+        if transforms:
+            pipeline = Compose(transforms)
+            console.print(
+                f"[bold blue]Pipeline:[/] Compose({len(transforms)} transform(s))"
+            )
+        else:
+            console.print("[yellow]No augmentations selected — augmented output will equal original.[/]")
+
+    # -- 3. Apply pipeline -------------------------------------------------------
+    augmented = pipeline(copy.deepcopy(original)) if pipeline is not None else copy.deepcopy(original)
+
+    # -- 4. Create preview/ directory -------------------------------------------
+    os.makedirs("preview", exist_ok=True)
+
+    # -- 5. Save before/after frames for the first camera -----------------------
+    camera_names = original.metadata.camera_names
+    if not camera_names:
+        console.print("[yellow]No cameras found in episode metadata — skipping frame export.[/]")
+    else:
+        cam = camera_names[0]
+        orig_frames = original.frames[cam]   # list/array of (H, W, 3) uint8 RGB
+        aug_frames = augmented.frames[cam]
+
+        n_orig = len(orig_frames)
+        n_aug = len(aug_frames)
+
+        # Sample indices: first, middle, last (clamped to actual length)
+        sample_labels = [0, 200, 399]
+        saved_files: list[str] = []
+
+        for label in sample_labels:
+            # Before frame
+            orig_idx = min(label, n_orig - 1)
+            before_frame = np.array(orig_frames[orig_idx])
+            before_bgr = cv2.cvtColor(before_frame, cv2.COLOR_RGB2BGR)
+            before_path = f"preview/before_frame_{label:03d}.png"
+            cv2.imwrite(before_path, before_bgr)
+            saved_files.append(before_path)
+
+            # After frame
+            aug_idx = min(label, n_aug - 1)
+            after_frame = np.array(aug_frames[aug_idx])
+            after_bgr = cv2.cvtColor(after_frame, cv2.COLOR_RGB2BGR)
+            after_path = f"preview/after_frame_{label:03d}.png"
+            cv2.imwrite(after_path, after_bgr)
+            saved_files.append(after_path)
+
+        console.print(f"[bold blue]Camera:[/] {cam!r} — saved {len(saved_files)} PNGs to preview/")
+
+    # -- 6. Print summary --------------------------------------------------------
+    orig_action = np.array(original.action)     # (T, D)
+    aug_action = np.array(augmented.action)
+
+    # Align lengths for diff (SpeedWarp may change frame count)
+    min_t = min(len(orig_action), len(aug_action))
+    action_diff = float(np.mean(np.abs(orig_action[:min_t] - aug_action[:min_t])))
+
+    orig_state = np.array(original.state)
+    aug_state = np.array(augmented.state)
+    min_ts = min(len(orig_state), len(aug_state))
+    state_diff = float(np.mean(np.abs(orig_state[:min_ts] - aug_state[:min_ts])))
+
+    from rich.table import Table as _Table
+
+    summary = _Table(title="Preview Summary", show_lines=True)
+    summary.add_column("Property", style="bold")
+    summary.add_column("Value")
+
+    summary.add_row("Dataset", dataset)
+    summary.add_row("Episode index", str(episode))
+    summary.add_row("Frame count (original)", str(original.num_frames))
+    summary.add_row("Frame count (augmented)", str(augmented.num_frames))
+    summary.add_row("Action diff (mean |Δ|)", f"{action_diff:.6f}")
+    summary.add_row("State diff (mean |Δ|)", f"{state_diff:.6f}")
+    if camera_names:
+        summary.add_row("Saved files", "\n".join(saved_files))
+
+    console.print(summary)
+
+
+# ---------------------------------------------------------------------------
 # robotq list
 # ---------------------------------------------------------------------------
 

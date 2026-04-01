@@ -2,5 +2,7 @@
   "name": "robotq",
   "version": "0.1.0",
   "description": "Augment LeRobot v3 robotics datasets with composable, action-aware transforms",
-  "author": "YongkangZOU"
+  "author": {
+    "name": "YongkangZOU"
+  }
 }

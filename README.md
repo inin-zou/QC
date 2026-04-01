@@ -40,6 +40,8 @@ RobotQ takes a LeRobot v3 dataset, applies a composable pipeline of augmentation
 - **Python API** — `from robotq.core.pipeline import Compose`
 - **MCP Server** — AI agents can call `augment_dataset` as a tool
 
+**Interactive notebook:** [examples/demo.ipynb](examples/demo.ipynb) — full walkthrough with visualizations (runs on GitHub)
+
 ## How to Run
 
 ### Installation
@@ -259,6 +261,17 @@ The error handling review alone found 8 issues (3 critical: silent frame padding
 - **~3,200 lines of code** (excluding tests)
 - **6 design documents** written before any code — agents followed the spec
 - Design docs and agent playbook available in `.claude/docs/`
+
+## Jupyter Notebook Demo
+
+See [examples/demo.ipynb](examples/demo.ipynb) for an interactive walkthrough that:
+- Loads a real ALOHA dataset and inspects episode structure
+- Builds a composable pipeline (Mirror + ColorJitter + SpeedWarp)
+- Shows before/after frame comparison grids
+- Plots action trajectories showing L/R arm swap
+- Writes the augmented dataset
+
+The notebook includes pre-executed outputs — viewable directly on GitHub without running anything.
 
 ## Testing
 

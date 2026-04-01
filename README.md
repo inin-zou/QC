@@ -181,8 +181,7 @@ robotq/
 ├── io/                         # I/O layer
 │   ├── loader.py               # LeRobot API + OpenCV video decoding
 │   ├── writer.py               # LeRobot official writer (guarantees valid output)
-│   ├── video.py                # Pure MP4 decoder (decode only)
-│   └── schema.py               # JSON/JSONL metadata parsing
+│   └── video.py                # Pure MP4 decoder (decode only)
 ├── adapters/                   # Robot-specific knowledge
 │   ├── base.py                 # ActionAdapter protocol
 │   └── aloha.py                # ALOHA bimanual (14-DOF, L/R arm swap)
@@ -292,7 +291,7 @@ The error handling review alone found 8 issues (3 critical: silent frame padding
 
 ### Stats
 - **15+ agent dispatches** across 4 phases
-- **141 unit tests** written by agents + manual integration
+- **128 unit tests** written by agents + manual integration
 - **~2,500 lines of source code** + ~1,700 lines of tests
 - **6 design documents** written before any code — agents followed the spec
 - Design docs and agent playbook available in `.claude/docs/`
@@ -320,7 +319,7 @@ robotq augment --dataset lerobot/aloha_static_cups_open --output test/smoke \
   --color-jitter --adapter aloha --max-episodes 1 --no-upload --dry-run
 ```
 
-141 tests covering: Episode validation, video decoding, schema parsing, all 6 augmentations, pipeline composition, adapter arm-swap logic, config parsing, writer integrity checks, MCP server tools, loader integration.
+128 tests covering: Episode validation, video decoding, all 6 augmentations, pipeline composition, adapter arm-swap logic, config parsing, writer integrity checks, MCP server tools, loader integration.
 
 ## Roadmap
 

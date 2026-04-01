@@ -26,7 +26,11 @@ class ColorJitter(SequenceTransform):
         p: float = 1.0,
     ) -> None:
         super().__init__(p=p)
-        for name, val in [("brightness", brightness), ("contrast", contrast), ("saturation", saturation)]:
+        for name, val in [
+            ("brightness", brightness),
+            ("contrast", contrast),
+            ("saturation", saturation),
+        ]:
             if not (0.0 <= val <= 1.0):
                 raise ValueError(f"{name} must be in [0.0, 1.0], got {val!r}")
         if not (0.0 <= hue <= 0.5):

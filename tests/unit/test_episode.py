@@ -12,6 +12,7 @@ from robotq.core.episode import Episode, EpisodeMetadata
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_metadata(**overrides) -> EpisodeMetadata:
     defaults = dict(
         episode_index=0,
@@ -29,7 +30,9 @@ def _make_frames(cameras: list[str], T: int, H: int = 4, W: int = 4) -> dict:
     return {cam: [np.zeros((H, W, 3), dtype=np.uint8) for _ in range(T)] for cam in cameras}
 
 
-def _make_episode(T: int = 10, action_dim: int = 6, state_dim: int = 12, cameras=("top", "wrist")) -> Episode:
+def _make_episode(
+    T: int = 10, action_dim: int = 6, state_dim: int = 12, cameras=("top", "wrist")
+) -> Episode:
     return Episode(
         frames=_make_frames(list(cameras), T),
         actions=np.zeros((T, action_dim), dtype=np.float32),
@@ -41,6 +44,7 @@ def _make_episode(T: int = 10, action_dim: int = 6, state_dim: int = 12, cameras
 # ---------------------------------------------------------------------------
 # Test: create valid Episode and verify all fields are accessible
 # ---------------------------------------------------------------------------
+
 
 def test_create_valid_episode():
     ep = _make_episode()
@@ -65,6 +69,7 @@ def test_create_valid_episode():
 # Test: num_frames, action_dim, state_dim properties
 # ---------------------------------------------------------------------------
 
+
 def test_properties():
     ep = _make_episode(T=15, action_dim=7, state_dim=9)
 
@@ -84,6 +89,7 @@ def test_properties_single_step():
 # ---------------------------------------------------------------------------
 # Test: mismatched frame counts raises ValueError
 # ---------------------------------------------------------------------------
+
 
 def test_mismatched_frame_counts_raises():
     T = 10
@@ -125,6 +131,7 @@ def test_frames_states_mismatch_raises():
 # ---------------------------------------------------------------------------
 # Test: metadata extra field works
 # ---------------------------------------------------------------------------
+
 
 def test_metadata_extra_field_default_empty():
     meta = _make_metadata()

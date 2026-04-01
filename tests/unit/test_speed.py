@@ -13,13 +13,11 @@ from robotq.core.episode import Episode, EpisodeMetadata
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_episode(n_frames: int = 10, action_dim: int = 4, state_dim: int = 6) -> Episode:
     return Episode(
         frames={
-            "cam": [
-                np.random.randint(0, 256, (32, 32, 3), dtype=np.uint8)
-                for _ in range(n_frames)
-            ]
+            "cam": [np.random.randint(0, 256, (32, 32, 3), dtype=np.uint8) for _ in range(n_frames)]
         },
         actions=np.random.randn(n_frames, action_dim).astype(np.float32),
         states=np.random.randn(n_frames, state_dim).astype(np.float32),
@@ -37,6 +35,7 @@ def _make_episode(n_frames: int = 10, action_dim: int = 4, state_dim: int = 6) -
 # ---------------------------------------------------------------------------
 # Core behaviour tests
 # ---------------------------------------------------------------------------
+
 
 def test_speed_up_halves_frame_count():
     """rate=2.0 should approximately halve the number of frames."""
@@ -109,6 +108,7 @@ def test_does_not_mutate_original_frames():
 # Consistency checks
 # ---------------------------------------------------------------------------
 
+
 def test_actions_shape_consistent_with_frames():
     """actions.shape[0] must equal the number of frames in each camera."""
     ep = _make_episode(n_frames=15)
@@ -144,6 +144,7 @@ def test_output_states_dtype_preserved():
 # ---------------------------------------------------------------------------
 # Invalid parameter tests
 # ---------------------------------------------------------------------------
+
 
 def test_invalid_min_rate_zero_raises():
     with pytest.raises(ValueError):

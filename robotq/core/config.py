@@ -32,6 +32,7 @@ REGISTRY: dict[str, type] = {
 # Lazy-register BackgroundReplace to avoid importing torch at module load time
 try:
     from robotq.core.augmentations.background import BackgroundReplace
+
     REGISTRY["BackgroundReplace"] = BackgroundReplace
 except ImportError:
     pass  # generative deps not installed
@@ -57,8 +58,7 @@ def _build_transform(item: dict[str, Any], adapter: Any) -> Any:
 
     if type_name not in REGISTRY:
         raise ValueError(
-            f"Unknown transform type: {type_name!r}. "
-            f"Available types: {sorted(REGISTRY.keys())}"
+            f"Unknown transform type: {type_name!r}. Available types: {sorted(REGISTRY.keys())}"
         )
 
     cls = REGISTRY[type_name]
@@ -136,6 +136,4 @@ def resolve_adapter(name: str) -> Any:
 
         return AlohaAdapter()
 
-    raise ValueError(
-        f"Unknown adapter name: {name!r}. Supported adapters: ['aloha']"
-    )
+    raise ValueError(f"Unknown adapter name: {name!r}. Supported adapters: ['aloha']")

@@ -31,16 +31,13 @@ class Transform(ABC):
         self.p = p
 
     @abstractmethod
-    def apply(self, episode: Episode) -> Episode:
-        ...
+    def apply(self, episode: Episode) -> Episode: ...
 
     def __call__(self, episode: Episode) -> Episode:
         return self.apply(episode)
 
     def __repr__(self) -> str:
-        params = ", ".join(
-            f"{k}={v!r}" for k, v in vars(self).items() if not k.startswith("_")
-        )
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items() if not k.startswith("_"))
         return f"{self.__class__.__name__}({params})"
 
 
@@ -48,8 +45,7 @@ class FrameTransform(Transform):
     """Per-frame independent transform. Each frame gets different random params."""
 
     @abstractmethod
-    def apply_to_frame(self, frame: np.ndarray) -> np.ndarray:
-        ...
+    def apply_to_frame(self, frame: np.ndarray) -> np.ndarray: ...
 
     def apply(self, episode: Episode) -> Episode:
         if random.random() > self.p:
@@ -69,12 +65,10 @@ class SequenceTransform(Transform):
     """Temporally consistent transform. Params sampled ONCE per episode."""
 
     @abstractmethod
-    def get_params(self, episode: Episode) -> dict:
-        ...
+    def get_params(self, episode: Episode) -> dict: ...
 
     @abstractmethod
-    def apply_to_frame(self, frame: np.ndarray, params: dict) -> np.ndarray:
-        ...
+    def apply_to_frame(self, frame: np.ndarray, params: dict) -> np.ndarray: ...
 
     def apply(self, episode: Episode) -> Episode:
         if random.random() > self.p:
@@ -95,8 +89,7 @@ class TrajectoryTransform(Transform):
     """Episode-level transform. May change episode length, FPS, or metadata."""
 
     @abstractmethod
-    def apply_to_episode(self, episode: Episode) -> Episode:
-        ...
+    def apply_to_episode(self, episode: Episode) -> Episode: ...
 
     def apply(self, episode: Episode) -> Episode:
         if random.random() > self.p:
@@ -112,8 +105,7 @@ class RobotTransform(Transform):
         self.adapter = adapter
 
     @abstractmethod
-    def apply_to_episode(self, episode: Episode, adapter: ActionAdapter) -> Episode:
-        ...
+    def apply_to_episode(self, episode: Episode, adapter: ActionAdapter) -> Episode: ...
 
     def apply(self, episode: Episode) -> Episode:
         if random.random() > self.p:

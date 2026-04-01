@@ -54,8 +54,8 @@ class AlohaAdapter:
         per-joint tuning, especially for forearm_roll and wrist_rotate.
         """
         signs = np.ones(_ACTION_DIM, dtype=np.float64)
-        signs[0] = -1.0   # left  waist
-        signs[7] = -1.0   # right waist
+        signs[0] = -1.0  # left  waist
+        signs[7] = -1.0  # right waist
         return signs
 
     # --- Arm-swap helpers ----------------------------------------------------
@@ -75,8 +75,7 @@ class AlohaAdapter:
         """
         if vec.ndim != 1 or vec.shape[0] != _ACTION_DIM:
             raise ValueError(
-                f"swap_arms expects a 1-D array of length {_ACTION_DIM}, "
-                f"got shape {vec.shape}"
+                f"swap_arms expects a 1-D array of length {_ACTION_DIM}, got shape {vec.shape}"
             )
         out = np.empty_like(vec)
         out[_LEFT] = vec[_RIGHT]

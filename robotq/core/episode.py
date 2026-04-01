@@ -56,9 +56,7 @@ class Episode:
         unique_lengths = set(camera_lengths.values())
         if len(unique_lengths) > 1:
             detail = ", ".join(f"{c}={n}" for c, n in camera_lengths.items())
-            raise ValueError(
-                f"Frame counts differ across cameras: {detail}"
-            )
+            raise ValueError(f"Frame counts differ across cameras: {detail}")
 
         # If there are any frames, validate against actions / states T dimension
         if camera_lengths:

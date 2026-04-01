@@ -12,8 +12,12 @@ def _make_episode(n_frames=5):
         actions=np.zeros((n_frames, 2), dtype=np.float32),
         states=np.zeros((n_frames, 2), dtype=np.float32),
         metadata=EpisodeMetadata(
-            episode_index=0, task_description="test", task_id=0,
-            fps=50.0, camera_names=["cam"], robot_type="test",
+            episode_index=0,
+            task_description="test",
+            task_id=0,
+            fps=50.0,
+            camera_names=["cam"],
+            robot_type="test",
         ),
     )
 

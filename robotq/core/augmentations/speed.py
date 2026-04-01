@@ -57,9 +57,7 @@ class SpeedWarp(TrajectoryTransform):
     ) -> None:
         super().__init__(p=p)
         if min_rate <= 0 or max_rate < min_rate:
-            raise ValueError(
-                f"Need 0 < min_rate <= max_rate, got ({min_rate}, {max_rate})"
-            )
+            raise ValueError(f"Need 0 < min_rate <= max_rate, got ({min_rate}, {max_rate})")
         self.min_rate = min_rate
         self.max_rate = max_rate
 

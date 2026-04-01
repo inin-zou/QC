@@ -10,15 +10,18 @@ def _make_episode(n_frames=5):
     return Episode(
         frames={
             "cam": [
-                np.random.randint(50, 200, (32, 32, 3), dtype=np.uint8)
-                for _ in range(n_frames)
+                np.random.randint(50, 200, (32, 32, 3), dtype=np.uint8) for _ in range(n_frames)
             ]
         },
         actions=np.random.randn(n_frames, 4).astype(np.float32),
         states=np.random.randn(n_frames, 4).astype(np.float32),
         metadata=EpisodeMetadata(
-            episode_index=0, task_description="test", task_id=0,
-            fps=50.0, camera_names=["cam"], robot_type="test",
+            episode_index=0,
+            task_description="test",
+            task_id=0,
+            fps=50.0,
+            camera_names=["cam"],
+            robot_type="test",
         ),
     )
 
@@ -68,8 +71,12 @@ def test_color_jitter_temporal_consistency():
         actions=np.zeros((10, 2), dtype=np.float32),
         states=np.zeros((10, 2), dtype=np.float32),
         metadata=EpisodeMetadata(
-            episode_index=0, task_description="test", task_id=0,
-            fps=50.0, camera_names=["cam"], robot_type="test",
+            episode_index=0,
+            task_description="test",
+            task_id=0,
+            fps=50.0,
+            camera_names=["cam"],
+            robot_type="test",
         ),
     )
     jitter = ColorJitter(brightness=0.3, contrast=0.2, saturation=0.2, hue=0.05, p=1.0)

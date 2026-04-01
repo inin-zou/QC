@@ -26,8 +26,12 @@ def _make_episode(n_frames=5):
         actions=actions,
         states=states,
         metadata=EpisodeMetadata(
-            episode_index=0, task_description="test", task_id=0,
-            fps=50.0, camera_names=["cam"], robot_type="aloha",
+            episode_index=0,
+            task_description="test",
+            task_id=0,
+            fps=50.0,
+            camera_names=["cam"],
+            robot_type="aloha",
         ),
     )
 

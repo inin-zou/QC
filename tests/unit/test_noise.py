@@ -1,7 +1,6 @@
 """Tests for GaussianNoise and ActionNoise augmentations."""
 
 import numpy as np
-import pytest
 
 from robotq.core.augmentations.noise import ActionNoise, GaussianNoise
 from robotq.core.episode import Episode, EpisodeMetadata
@@ -11,12 +10,12 @@ from robotq.core.episode import Episode, EpisodeMetadata
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_episode(n_frames: int = 5, action_dim: int = 4, state_dim: int = 4) -> Episode:
     return Episode(
         frames={
             "cam": [
-                np.random.randint(50, 200, (32, 32, 3), dtype=np.uint8)
-                for _ in range(n_frames)
+                np.random.randint(50, 200, (32, 32, 3), dtype=np.uint8) for _ in range(n_frames)
             ]
         },
         actions=np.random.randn(n_frames, action_dim).astype(np.float32),
@@ -35,6 +34,7 @@ def _make_episode(n_frames: int = 5, action_dim: int = 4, state_dim: int = 4) ->
 # ---------------------------------------------------------------------------
 # GaussianNoise tests
 # ---------------------------------------------------------------------------
+
 
 def test_gaussian_noise_changes_pixel_values():
     """Applying GaussianNoise with non-zero sigma should change at least some pixels."""
@@ -77,8 +77,12 @@ def test_gaussian_noise_clips_to_valid_range():
         actions=np.zeros((10, 4), dtype=np.float32),
         states=np.zeros((10, 4), dtype=np.float32),
         metadata=EpisodeMetadata(
-            episode_index=0, task_description="test", task_id=0,
-            fps=50.0, camera_names=["cam"], robot_type="test",
+            episode_index=0,
+            task_description="test",
+            task_id=0,
+            fps=50.0,
+            camera_names=["cam"],
+            robot_type="test",
         ),
     )
     aug = GaussianNoise(sigma=1.0, p=1.0)  # very large sigma to force clipping
@@ -96,23 +100,26 @@ def test_gaussian_noise_each_frame_gets_independent_noise():
         actions=np.zeros((10, 2), dtype=np.float32),
         states=np.zeros((10, 2), dtype=np.float32),
         metadata=EpisodeMetadata(
-            episode_index=0, task_description="test", task_id=0,
-            fps=50.0, camera_names=["cam"], robot_type="test",
+            episode_index=0,
+            task_description="test",
+            task_id=0,
+            fps=50.0,
+            camera_names=["cam"],
+            robot_type="test",
         ),
     )
     aug = GaussianNoise(sigma=0.1, p=1.0)
     result = aug(ep)
     # With independent noise the frames should differ from each other
     first = result.frames["cam"][0]
-    any_different = any(
-        not np.array_equal(first, f) for f in result.frames["cam"][1:]
-    )
+    any_different = any(not np.array_equal(first, f) for f in result.frames["cam"][1:])
     assert any_different
 
 
 # ---------------------------------------------------------------------------
 # ActionNoise tests
 # ---------------------------------------------------------------------------
+
 
 def test_action_noise_changes_action_values():
     """ActionNoise with non-zero sigma must change at least some action values."""

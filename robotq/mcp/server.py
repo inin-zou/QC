@@ -44,24 +44,28 @@ def _resolve_augmentation_class(name: str):
     canon = _AUGMENTATION_NAME_MAP.get(name)
     if canon is None:
         raise ValueError(
-            f"Unknown augmentation: {name!r}. "
-            f"Available: {sorted(_AUGMENTATION_NAME_MAP.keys())}"
+            f"Unknown augmentation: {name!r}. Available: {sorted(_AUGMENTATION_NAME_MAP.keys())}"
         )
 
     if canon == "Mirror":
         from robotq.core.augmentations.mirror import Mirror
+
         return Mirror
     elif canon == "ColorJitter":
         from robotq.core.augmentations.color import ColorJitter
+
         return ColorJitter
     elif canon == "GaussianNoise":
         from robotq.core.augmentations.noise import GaussianNoise
+
         return GaussianNoise
     elif canon == "ActionNoise":
         from robotq.core.augmentations.noise import ActionNoise
+
         return ActionNoise
     elif canon == "SpeedWarp":
         from robotq.core.augmentations.speed import SpeedWarp
+
         return SpeedWarp
     else:
         raise ValueError(f"No import path for {canon!r}")
@@ -92,6 +96,7 @@ def _build_pipeline_from_names(
 # ---------------------------------------------------------------------------
 # Tool: list_augmentations
 # ---------------------------------------------------------------------------
+
 
 @mcp.tool()
 def list_augmentations() -> list[dict]:
@@ -133,6 +138,7 @@ def list_augmentations() -> list[dict]:
 # ---------------------------------------------------------------------------
 # Tool: augment_dataset
 # ---------------------------------------------------------------------------
+
 
 @mcp.tool()
 def augment_dataset(
@@ -189,14 +195,14 @@ def augment_dataset(
     total = len(all_episodes)
     orig = len(episodes)
     return (
-        f"Augmented {orig} episodes x{multiply} -> {total} total episodes. "
-        f"Visualize at: {viz_link}"
+        f"Augmented {orig} episodes x{multiply} -> {total} total episodes. Visualize at: {viz_link}"
     )
 
 
 # ---------------------------------------------------------------------------
 # Tool: preview_augmentation
 # ---------------------------------------------------------------------------
+
 
 @mcp.tool()
 def preview_augmentation(
@@ -259,9 +265,7 @@ def preview_augmentation(
                 f"mean={pixel_diff.mean():.2f}, max={pixel_diff.max():.1f}"
             )
         else:
-            lines.append(
-                f"Frame shape changed: {orig_first.shape} -> {aug_first.shape}"
-            )
+            lines.append(f"Frame shape changed: {orig_first.shape} -> {aug_first.shape}")
 
     # Action diff
     if original.num_frames == augmented.num_frames:

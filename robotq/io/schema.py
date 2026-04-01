@@ -10,8 +10,13 @@ from pathlib import Path
 
 # Keys that must be present in info.json for the file to be considered valid.
 _REQUIRED_INFO_KEYS = (
-    "codebase_version", "fps", "total_episodes", "features",
-    "chunks_size", "data_path", "video_path",
+    "codebase_version",
+    "fps",
+    "total_episodes",
+    "features",
+    "chunks_size",
+    "data_path",
+    "video_path",
 )
 
 
@@ -39,9 +44,7 @@ def parse_info(path: str | Path) -> dict:
 
     missing = [k for k in _REQUIRED_INFO_KEYS if k not in info]
     if missing:
-        raise ValueError(
-            f"info.json is missing required key(s): {missing}"
-        )
+        raise ValueError(f"info.json is missing required key(s): {missing}")
 
     return info
 
@@ -154,9 +157,5 @@ def get_camera_names(info: dict) -> list[str]:
         Sorted list of camera name strings (sorted for determinism).
     """
     prefix = "observation.images."
-    names = [
-        key[len(prefix):]
-        for key in info.get("features", {})
-        if key.startswith(prefix)
-    ]
+    names = [key[len(prefix) :] for key in info.get("features", {}) if key.startswith(prefix)]
     return sorted(names)

@@ -30,8 +30,7 @@ class TestDecodeVideoFrameCount:
         video_path = tmp_path / "test.mp4"
         num_frames = 10
         bgr_frames = [
-            np.full((64, 64, 3), fill_value=i * 10, dtype=np.uint8)
-            for i in range(num_frames)
+            np.full((64, 64, 3), fill_value=i * 10, dtype=np.uint8) for i in range(num_frames)
         ]
         _write_test_video(video_path, bgr_frames)
 
@@ -82,9 +81,9 @@ class TestDecodeVideoColorOrder:
         # Construct a solid-colour frame in BGR order for the writer.
         blue_bgr, green_bgr, red_bgr = 10, 20, 200
         bgr_frame = np.zeros((64, 64, 3), dtype=np.uint8)
-        bgr_frame[:, :, 0] = blue_bgr   # B channel
+        bgr_frame[:, :, 0] = blue_bgr  # B channel
         bgr_frame[:, :, 1] = green_bgr  # G channel
-        bgr_frame[:, :, 2] = red_bgr    # R channel
+        bgr_frame[:, :, 2] = red_bgr  # R channel
 
         _write_test_video(video_path, [bgr_frame])
 
@@ -114,7 +113,7 @@ class TestDecodeVideoColorOrder:
         # Write a strongly red frame (high R, low B) in BGR order.
         bgr_frame = np.zeros((32, 32, 3), dtype=np.uint8)
         bgr_frame[:, :, 2] = 220  # R channel in BGR notation
-        bgr_frame[:, :, 0] = 20   # B channel in BGR notation
+        bgr_frame[:, :, 0] = 20  # B channel in BGR notation
 
         _write_test_video(video_path, [bgr_frame])
 
@@ -124,6 +123,5 @@ class TestDecodeVideoColorOrder:
         r_val = int(frame[0, 0, 0])
         b_val = int(frame[0, 0, 2])
         assert r_val > b_val, (
-            f"R ({r_val}) should be greater than B ({b_val}); "
-            "BGR→RGB conversion may be missing"
+            f"R ({r_val}) should be greater than B ({b_val}); BGR→RGB conversion may be missing"
         )

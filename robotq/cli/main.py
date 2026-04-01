@@ -26,23 +26,34 @@ console = Console()
 # robotq augment
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def augment(
-    dataset: Optional[str] = typer.Option(None, help="HF repo ID, e.g. lerobot/aloha_static_cups_open"),
-    output: Optional[str] = typer.Option(None, help="Output HF repo ID, e.g. user/augmented-dataset"),
+    dataset: Optional[str] = typer.Option(
+        None, help="HF repo ID, e.g. lerobot/aloha_static_cups_open"
+    ),
+    output: Optional[str] = typer.Option(
+        None, help="Output HF repo ID, e.g. user/augmented-dataset"
+    ),
     mirror: bool = typer.Option(False, "--mirror", help="Enable Mirror augmentation"),
     color_jitter: bool = typer.Option(False, "--color-jitter", help="Enable ColorJitter"),
     gaussian_noise: bool = typer.Option(False, "--gaussian-noise", help="Enable GaussianNoise"),
     action_noise: bool = typer.Option(False, "--action-noise", help="Enable ActionNoise"),
     speed_warp: bool = typer.Option(False, "--speed-warp", help="Enable SpeedWarp (0.8-1.2x)"),
-    background: Optional[str] = typer.Option(None, "--background", help="BackgroundReplace prompt (e.g. 'industrial kitchen')"),
-    background_method: str = typer.Option("fast", "--background-method", help="Background mask method: 'fast' or 'auto'"),
+    background: Optional[str] = typer.Option(
+        None, "--background", help="BackgroundReplace prompt (e.g. 'industrial kitchen')"
+    ),
+    background_method: str = typer.Option(
+        "fast", "--background-method", help="Background mask method: 'fast' or 'auto'"
+    ),
     config: Optional[str] = typer.Option(None, help="Path to YAML config file (overrides flags)"),
     adapter: str = typer.Option("aloha", help="Robot adapter name"),
     multiply: int = typer.Option(1, help="Augmented copies per original episode"),
     max_episodes: Optional[int] = typer.Option(None, help="Limit number of source episodes"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Print summary, don't process"),
-    preview_first: bool = typer.Option(False, "--preview-first", help="Preview episode 0 before full run"),
+    preview_first: bool = typer.Option(
+        False, "--preview-first", help="Preview episode 0 before full run"
+    ),
     no_upload: bool = typer.Option(False, "--no-upload", help="Write locally, skip push_to_hub"),
     plain: bool = typer.Option(False, "--plain", help="Plain text output (no Rich formatting)"),
     token: Optional[str] = typer.Option(None, help="HF token for upload"),
@@ -104,9 +115,7 @@ def augment(
         )
         if transforms:
             pipeline = Compose(transforms)
-            console.print(
-                f"[bold blue]Pipeline:[/] Compose({len(transforms)} transform(s))"
-            )
+            console.print(f"[bold blue]Pipeline:[/] Compose({len(transforms)} transform(s))")
         else:
             console.print("[yellow]No augmentations selected — output will be a copy.[/]")
 
@@ -134,10 +143,18 @@ def augment(
         os.makedirs("preview", exist_ok=True)
         cam = episodes[0].metadata.camera_names[0]
         mid = episodes[0].num_frames // 2
-        cv2.imwrite("preview/preview_before.png", cv2.cvtColor(episodes[0].frames[cam][mid], cv2.COLOR_RGB2BGR))
-        cv2.imwrite("preview/preview_after.png", cv2.cvtColor(preview_ep.frames[cam][mid], cv2.COLOR_RGB2BGR))
-        action_diff = float(np.mean(np.abs(episodes[0].actions - preview_ep.actions[:episodes[0].num_frames])))
-        console.print(f"  Saved preview/preview_before.png and preview/preview_after.png")
+        cv2.imwrite(
+            "preview/preview_before.png",
+            cv2.cvtColor(episodes[0].frames[cam][mid], cv2.COLOR_RGB2BGR),
+        )
+        cv2.imwrite(
+            "preview/preview_after.png",
+            cv2.cvtColor(preview_ep.frames[cam][mid], cv2.COLOR_RGB2BGR),
+        )
+        action_diff = float(
+            np.mean(np.abs(episodes[0].actions - preview_ep.actions[: episodes[0].num_frames]))
+        )
+        console.print("  Saved preview/preview_before.png and preview/preview_after.png")
         console.print(f"  Action diff: {action_diff:.6f}")
         console.print("  Continue with full augmentation? (Ctrl+C to abort)")
 
@@ -166,7 +183,7 @@ def augment(
 
     # -- 6. Write dataset --------------------------------------------------------
     console.print(f"[bold blue]Writing dataset to:[/] {output}")
-    from robotq.io.writer import write_dataset as _write_dataset, generate_visualizer_link
+    from robotq.io.writer import write_dataset as _write_dataset
 
     viz_link = _write_dataset(
         all_episodes,
@@ -182,6 +199,7 @@ def augment(
 # ---------------------------------------------------------------------------
 # robotq preview
 # ---------------------------------------------------------------------------
+
 
 @app.command()
 def preview(
@@ -236,14 +254,16 @@ def preview(
         )
         if transforms:
             pipeline = Compose(transforms)
-            console.print(
-                f"[bold blue]Pipeline:[/] Compose({len(transforms)} transform(s))"
-            )
+            console.print(f"[bold blue]Pipeline:[/] Compose({len(transforms)} transform(s))")
         else:
-            console.print("[yellow]No augmentations selected — augmented output will equal original.[/]")
+            console.print(
+                "[yellow]No augmentations selected — augmented output will equal original.[/]"
+            )
 
     # -- 3. Apply pipeline -------------------------------------------------------
-    augmented = pipeline(copy.deepcopy(original)) if pipeline is not None else copy.deepcopy(original)
+    augmented = (
+        pipeline(copy.deepcopy(original)) if pipeline is not None else copy.deepcopy(original)
+    )
 
     # -- 4. Create preview/ directory -------------------------------------------
     os.makedirs("preview", exist_ok=True)
@@ -254,7 +274,7 @@ def preview(
         console.print("[yellow]No cameras found in episode metadata — skipping frame export.[/]")
     else:
         cam = camera_names[0]
-        orig_frames = original.frames[cam]   # list/array of (H, W, 3) uint8 RGB
+        orig_frames = original.frames[cam]  # list/array of (H, W, 3) uint8 RGB
         aug_frames = augmented.frames[cam]
 
         n_orig = len(orig_frames)
@@ -284,7 +304,7 @@ def preview(
         console.print(f"[bold blue]Camera:[/] {cam!r} — saved {len(saved_files)} PNGs to preview/")
 
     # -- 6. Print summary --------------------------------------------------------
-    orig_action = original.actions     # (T, D)
+    orig_action = original.actions  # (T, D)
     aug_action = augmented.actions
 
     # Align lengths for diff (SpeedWarp may change frame count)
@@ -318,6 +338,7 @@ def preview(
 # robotq list
 # ---------------------------------------------------------------------------
 
+
 @app.command(name="list")
 def list_augmentations() -> None:
     """Show available augmentations."""
@@ -341,6 +362,7 @@ def list_augmentations() -> None:
 # robotq adapters
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def adapters() -> None:
     """Show available robot adapters."""
@@ -358,6 +380,7 @@ def adapters() -> None:
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _resolve_adapter(name: str):
     """Resolve an adapter name to an adapter instance."""

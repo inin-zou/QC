@@ -1,7 +1,5 @@
 """Unit tests for robotq.io.writer."""
 
-import shutil
-
 import numpy as np
 import pytest
 
@@ -18,8 +16,7 @@ def test_generate_visualizer_link_default_episode():
     """Default episode=0 should produce the correct encoded URL."""
     url = generate_visualizer_link("user/dataset")
     expected = (
-        "https://huggingface.co/spaces/lerobot/visualize_dataset"
-        "?path=%2Fuser%2Fdataset%2Fepisode_0"
+        "https://huggingface.co/spaces/lerobot/visualize_dataset?path=%2Fuser%2Fdataset%2Fepisode_0"
     )
     assert url == expected
 
@@ -28,8 +25,7 @@ def test_generate_visualizer_link_episode_5():
     """episode=5 should appear in the URL."""
     url = generate_visualizer_link("user/dataset", episode=5)
     expected = (
-        "https://huggingface.co/spaces/lerobot/visualize_dataset"
-        "?path=%2Fuser%2Fdataset%2Fepisode_5"
+        "https://huggingface.co/spaces/lerobot/visualize_dataset?path=%2Fuser%2Fdataset%2Fepisode_5"
     )
     assert url == expected
 
@@ -62,8 +58,7 @@ def _make_episode(
 
     frames = {
         cam: [
-            np.random.randint(0, 255, (height, width, 3), dtype=np.uint8)
-            for _ in range(num_frames)
+            np.random.randint(0, 255, (height, width, 3), dtype=np.uint8) for _ in range(num_frames)
         ]
         for cam in camera_names
     }
@@ -124,10 +119,7 @@ def test_write_dataset_local_only_two_cameras(tmp_path):
     repo_id = "test_user/multicam"
     root = tmp_path / repo_id
 
-    episodes = [
-        _make_episode(i, camera_names=["cam_high", "cam_low"])
-        for i in range(2)
-    ]
+    episodes = [_make_episode(i, camera_names=["cam_high", "cam_low"]) for i in range(2)]
     url = write_dataset(
         episodes,
         repo_id=repo_id,

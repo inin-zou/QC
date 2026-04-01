@@ -15,6 +15,7 @@ def test_loader_is_callable():
 def test_loader_accepts_keyword_args():
     """Verify the function signature accepts expected keyword args."""
     import inspect
+
     sig = inspect.signature(load_dataset)
     params = list(sig.parameters.keys())
     assert "repo_id" in params

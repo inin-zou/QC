@@ -101,7 +101,7 @@ class BackgroundReplace(SequenceTransform):
         0 = foreground (robot + objects, to keep).
         """
         # Stack frames and compute median background
-        stack = np.stack(frames[:min(len(frames), 50)])  # Use first 50 frames max
+        stack = np.stack(frames[: min(len(frames), 50)])  # Use first 50 frames max
         median_bg = np.median(stack, axis=0).astype(np.uint8)
 
         # Use the middle frame as reference
@@ -176,6 +176,7 @@ class BackgroundReplace(SequenceTransform):
     def apply(self, episode: Episode) -> Episode:
         """Override apply to handle the inpainting pipeline."""
         import random as _random
+
         if _random.random() > self.p:
             return episode
 

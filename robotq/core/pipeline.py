@@ -95,7 +95,4 @@ class SomeOf(Transform):
 
     def __repr__(self) -> str:
         children = ", ".join(repr(t) for t in self.transforms)
-        return (
-            f"{self.__class__.__name__}("
-            f"transforms=[{children}], n={self.n!r}, p={self.p!r})"
-        )
+        return f"{self.__class__.__name__}(transforms=[{children}], n={self.n!r}, p={self.p!r})"

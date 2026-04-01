@@ -133,7 +133,10 @@ def load_dataset(
                 logger.warning(
                     "Episode %d camera '%s': decoded %d frames but expected %d. "
                     "Trimming/padding to match.",
-                    ep_idx, cam_name, len(ep_frames), n_frames,
+                    ep_idx,
+                    cam_name,
+                    len(ep_frames),
+                    n_frames,
                 )
                 if len(ep_frames) > n_frames:
                     ep_frames = ep_frames[:n_frames]
@@ -157,8 +160,6 @@ def load_dataset(
             robot_type=robot_type,
         )
 
-        episodes.append(
-            Episode(frames=frames, actions=actions, states=states, metadata=metadata)
-        )
+        episodes.append(Episode(frames=frames, actions=actions, states=states, metadata=metadata))
 
     return episodes

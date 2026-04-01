@@ -321,9 +321,15 @@ robotq augment --dataset lerobot/aloha_static_cups_open --output test/smoke \
 
 128 tests covering: Episode validation, video decoding, all 6 augmentations, pipeline composition, adapter arm-swap logic, config parsing, writer integrity checks, MCP server tools, loader integration.
 
+## Known Limitations
+
+- **Loader speed** — Decoding 4 camera videos per episode via OpenCV is ~30s/episode. Parallel camera decoding (`multiprocessing`) or `torchcodec` (when FFmpeg is available) would give a ~4x speedup. Acceptable for batch augmentation, but not for interactive use.
+- **BackgroundReplace mask quality** — The `fast` method uses frame differencing, which produces rough masks. Works for proving the pipeline, but SAM2 segmentation would produce much cleaner robot/background separation.
+
 ## Roadmap
 
+- Parallel video decoding — multiprocessing across cameras for ~4x loader speedup
+- SAM2 integration — accurate foreground segmentation for BackgroundReplace
 - Rust kernels — PyO3 acceleration for frame processing hot loops
 - More robot adapters — single-arm, mobile manipulators
-- SAM2 integration — accurate foreground segmentation for BackgroundReplace (currently uses motion-based masking)
 - Training integration — direct use as a LeRobot training-time transform

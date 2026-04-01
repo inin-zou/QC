@@ -155,54 +155,96 @@ robotq/
 
 ## How AI Coding Agents Were Used
 
-This project was built almost entirely through AI agent orchestration using Claude Code. The workflow:
+This project was built through structured AI agent orchestration using Claude Code. Rather than writing code in a single session, we designed a multi-phase system where a **coordinator** (the main Claude Code session) dispatches **specialized subagents** in parallel, each with isolated git worktrees, specific instructions, and test requirements.
 
-### Brainstorming Phase
-- Collaborative product design session exploring competitive landscape (AugLab, Albumentations, RoboEngine)
-- Produced 6 design documents: product-design.md, architecture.md, design-patterns.md, ROADMAP.md, agentic-engineering.md, test.md
+### The Orchestration System
 
-### Implementation via Parallel Agent Dispatch
-The agentic-engineering.md playbook defined exact agent dispatch blocks for each phase:
+All agent coordination is defined in `.claude/docs/agentic-engineering.md` — a playbook with copy-pasteable agent dispatch blocks. The coordinator never writes code directly during parallel phases; it dispatches, validates, and integrates.
 
-**Phase 1A** — 3 agents in parallel (worktree isolation):
-- Agent 1: Episode container + tests
-- Agent 2: Video decoder + tests
-- Agent 3: Schema parser + tests
+```
+Coordinator (main session)
+├── Reads design docs (product-design.md, architecture.md, design-patterns.md)
+├── Dispatches subagents in parallel batches (each in a git worktree)
+├── Runs validation gates between phases (pytest + import smoke tests)
+├── Dispatches code-reviewer agents after each phase
+└── Handles integration points manually (where multiple modules meet)
+```
 
-**Phase 1B** — 2 agents in parallel:
-- Agent 4: Dataset loader + tests
-- Agent 5: Dataset writer + tests
+Each subagent receives:
+- Full task description (what to implement, exact file paths, exact test specs)
+- Context docs to read first (design-patterns.md for coding rules)
+- A "done" criteria (tests must pass before reporting back)
+- Isolation via git worktree (no conflicts with other parallel agents)
 
-**Phase 2A** — 3 agents in parallel:
-- Agent 6: Noise augmentations + tests
-- Agent 7: Adapter system + tests
-- Agent 8: Pipeline composition + tests
+### Phase Breakdown
 
-**Phase 3A** — 3 agents in parallel:
-- Agent 9: CLI (Typer + Rich)
-- Agent 10: Config parser + YAML examples
-- Agent 11: README
+Before any code was written, a brainstorming phase produced 6 design documents (`.claude/docs/`): product design, architecture, design patterns, roadmap, agentic engineering playbook, and test guide.
 
-**Phase 4** — 2 agents in parallel:
-- Agent 12: SpeedWarp augmentation
-- Agent 13: MCP server
+**Phase 1 — Foundation (5 agents, 2 parallel batches):**
+
+```
+Batch 1A (3 agents simultaneously):
+  Agent 1: core/episode.py + tests     ──┐
+  Agent 2: io/video.py + tests          ──┼── validation gate ──┐
+  Agent 3: io/schema.py + tests         ──┘                     │
+                                                                 │
+Batch 1B (2 agents simultaneously):                              │
+  Agent 4: io/loader.py + tests         ──┐  (depends on 1A) ◄──┘
+  Agent 5: io/writer.py + tests         ──┘
+                                           │
+Manual integration: transform.py + ColorJitter + DEMO 1 (real Hub upload)
+```
+
+**Phase 2 — Core Augmentations (4 agents, 1 batch + manual):**
+
+```
+Batch 2A (3 agents simultaneously):
+  Agent 6: augmentations/noise.py + tests
+  Agent 7: adapters/base.py + aloha.py + tests
+  Agent 8: core/pipeline.py + tests
+
+Manual: augmentations/mirror.py (critical integration — adapter + transform + video)
+        DEMO 2: Mirror + ColorJitter pipeline on real aloha data
+```
+
+**Phase 3 — CLI & Polish (3 agents simultaneously):**
+
+```
+  Agent 9:  cli/main.py (Typer + Rich)
+  Agent 10: core/config.py + examples/aloha_basic.yaml
+  Agent 11: README.md
+```
+
+**Phase 4 — Stretch Goals (2 agents simultaneously):**
+
+```
+  Agent 12: augmentations/speed.py (SpeedWarp)
+  Agent 13: mcp/server.py (MCP server for AI agents)
+```
 
 ### Quality Gates
-- **Validation gates** between phases: full test suite + import smoke tests
-- **Error handling review**: dedicated code-reviewer agent found 8 issues (3 critical), all fixed
-- **Integration testing**: real aloha dataset loaded, augmented, and pushed to Hub at each phase boundary
+
+Between every phase:
+1. **Full test suite** — `pytest tests/unit/ -v` must pass (all 117 tests)
+2. **Import smoke test** — verify all modules import without error
+3. **Code review agent** — dedicated reviewer checks against design-patterns.md
+4. **Demo checkpoint** — real aloha dataset loaded, augmented, written, and (at phase boundaries) pushed to Hub
+
+The error handling review alone found 8 issues (3 critical: silent frame padding, missing 0-episode guard, IndexError on empty frames). All fixed before proceeding.
 
 ### What the Agentic Workflow Caught
-1. **LeRobot v3.0 format mismatch** — initial research said per-episode files, but real datasets pack all episodes into single files with chunk/file indexing. Discovered during Phase 1C integration, loader rewritten from scratch.
-2. **torchcodec FFmpeg dependency** — LeRobot's default video decoder failed on macOS. Switched to OpenCV with frame-range seeking.
-3. **push_to_hub API change** — method lives on `LeRobotDataset`, not `LeRobotDatasetMetadata`. Found during real Hub upload test.
-4. **Silent frame padding** — code-reviewer agent flagged the loader silently padding frames when video/parquet frame counts disagreed. Changed to log warning + raise on zero frames.
+
+1. **LeRobot v3.0 format mismatch** — initial research said per-episode files, but real datasets pack all episodes into single chunk files. Discovered during Phase 1C integration when the loader hit the real data. Entire loader rewritten from scratch.
+2. **torchcodec FFmpeg dependency** — LeRobot's default video decoder crashed on macOS. Switched to OpenCV with frame-range seeking.
+3. **push_to_hub API difference** — method lives on `LeRobotDataset`, not `LeRobotDatasetMetadata`. Found during real Hub upload test.
+4. **Silent data corruption** — code-reviewer agent flagged the loader silently padding frames when video/parquet counts disagreed. Changed to warning + hard error on zero frames.
 
 ### Stats
 - **15+ agent dispatches** across 4 phases
 - **117 unit tests** written by agents + manual integration
 - **~3,200 lines of code** (excluding tests)
-- Design docs written before any code — agents followed the spec
+- **6 design documents** written before any code — agents followed the spec
+- Design docs and agent playbook available in `.claude/docs/`
 
 ## Testing
 

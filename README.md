@@ -129,22 +129,40 @@ write_dataset(episodes + augmented, repo_id="YOUR_USERNAME/aloha-augmented")
 
 ```bash
 uv pip install -e ".[mcp]"
-# Add to your .mcp.json or Claude Code config
 ```
 
-AI agents can then call `augment_dataset`, `list_augmentations`, and `preview_augmentation` as tools.
+Exposes 6 tools that AI agents can call directly:
 
-### Claude Code Skill (Plugin Marketplace)
+| Tool | What it does |
+|------|-------------|
+| `augment_dataset` | Run full augmentation pipeline and upload |
+| `preview_augmentation` | Preview one augmentation on a single episode |
+| `list_augmentations` | Show available transforms |
+| `list_adapters` | Show available robot adapters |
+| `inspect_dataset` | Inspect dataset structure (episodes, cameras, actions) |
+| `generate_config` | Generate a YAML pipeline config with sensible defaults |
 
-RobotQ is available as a Claude Code plugin. Install it with:
+### Claude Code Plugin (Skills + MCP)
+
+RobotQ is available as a Claude Code plugin marketplace. Install with:
 
 ```
-/plugins marketplace add inin-zou/QC
+/plugin marketplace add inin-zou/QC
+/plugin install robotq@robotq
+/reload-plugins
 ```
 
-This registers the RobotQ skill so Claude Code knows how to augment LeRobot datasets using the CLI, Python API, or MCP tools — including which augmentations to recommend, how adapters work, and how to write pipeline configs.
+This registers **5 skills** and **6 MCP tools**:
 
-The skill is also available standalone at `skill/robotq.md` for manual installation into `~/.claude/skills/` or `.claude/skills/`.
+| Skill | Trigger | What it does |
+|-------|---------|-------------|
+| `robotq:augment` | "augment this dataset" | Guide through augmentation pipeline |
+| `robotq:preview` | "preview augmentation" | Quick before/after check |
+| `robotq:configure` | "write a pipeline config" | Generate YAML config |
+| `robotq:inspect` | "inspect this dataset" | Show dataset structure |
+| `robotq:robotq` | "what can robotq do" | Overview and sub-skill router |
+
+Skills provide natural language guidance (Claude follows instructions to run CLI commands). MCP tools provide direct function calls (Claude executes `augment_dataset()` with structured parameters). Both are installed together — the plugin bundles the MCP server automatically.
 
 This follows the same pattern as [HuggingFace's dataset skills](https://github.com/huggingface/skills), making RobotQ a first-class citizen in the AI agent tooling ecosystem.
 

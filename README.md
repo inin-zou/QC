@@ -329,8 +329,9 @@ robotq augment --dataset lerobot/aloha_static_cups_open --output test/smoke \
 
 ## Roadmap
 
+- SAM2 integration — accurate foreground segmentation for BackgroundReplace (replacing motion-based masking)
 - Episode-level parallelism — process multiple episodes concurrently
-- SAM2 integration — accurate foreground segmentation for BackgroundReplace
 - Rust kernels — PyO3 acceleration for frame processing hot loops
-- More robot adapters — single-arm, mobile manipulators
+- More robot adapters — mobile manipulators, custom DOF configurations
 - Training integration — direct use as a LeRobot training-time transform
+- Resume on failure — checkpointing for large augmentation runs

@@ -294,6 +294,124 @@ def preview_augmentation(
 
 
 # ---------------------------------------------------------------------------
+# Tool: list_adapters
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def list_adapters() -> list[dict]:
+    """List available robot adapters with their properties."""
+    return [
+        {
+            "name": "aloha",
+            "robot_type": "ALOHA",
+            "dof": 14,
+            "mirror_support": "L/R arm swap (7 left + 7 right joints)",
+            "description": "ALOHA bimanual robot with 14-DOF (waist, shoulder, elbow, forearm_roll, wrist_angle, wrist_rotate, gripper per arm)",
+        },
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Tool: inspect_dataset
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def inspect_dataset(
+    source: str,
+    max_episodes: int = 1,
+) -> str:
+    """Inspect a LeRobot v3 dataset and return its structure.
+
+    Parameters:
+        source: HF repo ID, e.g. "lerobot/aloha_static_cups_open"
+        max_episodes: How many episodes to load for inspection (default 1)
+
+    Returns:
+        Text summary of the dataset structure.
+    """
+    from robotq.io.loader import load_dataset
+
+    episodes = load_dataset(source, max_episodes=max_episodes)
+    ep = episodes[0]
+
+    lines = [
+        f"Dataset: {source}",
+        f"Episodes loaded: {len(episodes)}",
+        f"Frames per episode (first): {ep.num_frames}",
+        f"Action dim: {ep.action_dim}",
+        f"State dim: {ep.state_dim}",
+        f"FPS: {ep.metadata.fps}",
+        f"Robot type: {ep.metadata.robot_type}",
+        f"Cameras: {', '.join(ep.metadata.camera_names)}",
+        f"Task: {ep.metadata.task_description}",
+        f"Frame shape: {ep.frames[ep.metadata.camera_names[0]][0].shape}",
+        f"Frame dtype: {ep.frames[ep.metadata.camera_names[0]][0].dtype}",
+        f"Actions dtype: {ep.actions.dtype}",
+    ]
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Tool: generate_config
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def generate_config(
+    dataset: str,
+    output: str,
+    augmentations: list[str],
+    adapter: str = "aloha",
+    multiply: int = 2,
+) -> str:
+    """Generate a YAML pipeline config file content for RobotQ.
+
+    Parameters:
+        dataset: HF repo ID for source dataset
+        output: HF repo ID for output dataset
+        augmentations: List of augmentation names, e.g. ["mirror", "color_jitter", "speed_warp"]
+        adapter: Robot adapter name (default "aloha")
+        multiply: Number of augmented copies (default 2)
+
+    Returns:
+        YAML config file content as a string.
+    """
+    import yaml
+
+    pipeline_items = []
+    for name in augmentations:
+        canon = _AUGMENTATION_NAME_MAP.get(name)
+        if canon is None:
+            raise ValueError(
+                f"Unknown augmentation: {name!r}. Available: {sorted(_AUGMENTATION_NAME_MAP.keys())}"
+            )
+        item: dict = {"type": canon}
+        # Add sensible defaults
+        if canon == "Mirror":
+            item["p"] = 0.5
+        elif canon == "ColorJitter":
+            item.update({"brightness": 0.3, "contrast": 0.2, "p": 1.0})
+        elif canon == "GaussianNoise":
+            item.update({"sigma": 0.02, "p": 0.5})
+        elif canon == "ActionNoise":
+            item.update({"sigma": 0.01, "p": 0.5})
+        elif canon == "SpeedWarp":
+            item.update({"min_rate": 0.8, "max_rate": 1.2, "p": 0.3})
+        pipeline_items.append(item)
+
+    config = {
+        "dataset": dataset,
+        "adapter": adapter,
+        "output": output,
+        "multiply": multiply,
+        "pipeline": pipeline_items,
+    }
+    return yaml.dump(config, default_flow_style=False, sort_keys=False)
+
+
+# ---------------------------------------------------------------------------
 # Entry point: python -m robotq.mcp.server
 # ---------------------------------------------------------------------------
 

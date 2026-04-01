@@ -27,20 +27,27 @@ def test_mcp_server_name():
 # ---------------------------------------------------------------------------
 
 
-def test_mcp_has_three_tools():
-    """Exactly 3 tools are registered on the MCP server."""
+def test_mcp_has_six_tools():
+    """Exactly 6 tools are registered on the MCP server."""
     from robotq.mcp.server import mcp
 
     tools = mcp._tool_manager.list_tools()
-    assert len(tools) == 3
+    assert len(tools) == 6
 
 
 def test_mcp_tool_names():
-    """The registered tool names are list_augmentations, augment_dataset, and preview_augmentation."""
+    """All 6 expected tools are registered."""
     from robotq.mcp.server import mcp
 
     tool_names = {t.name for t in mcp._tool_manager.list_tools()}
-    assert tool_names == {"list_augmentations", "augment_dataset", "preview_augmentation"}
+    assert tool_names == {
+        "list_augmentations",
+        "augment_dataset",
+        "preview_augmentation",
+        "list_adapters",
+        "inspect_dataset",
+        "generate_config",
+    }
 
 
 # ---------------------------------------------------------------------------
